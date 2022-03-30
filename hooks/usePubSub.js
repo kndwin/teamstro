@@ -1,10 +1,11 @@
 import create from "zustand";
-import { useEffect, useState } from "react";
 import * as Ably from "ably";
+import { nanoid } from "nanoid";
 
-export const client = new Ably.Realtime(
-  "X7YUvw.JnUFfw:fuT085pEFQ2SH6OJWztf_40-3ImfJQ54a2vVwb3GaAA"
-);
+export const client = new Ably.Realtime({
+  key: "X7YUvw.JnUFfw:fuT085pEFQ2SH6OJWztf_40-3ImfJQ54a2vVwb3GaAA",
+  clientId: nanoid(),
+});
 
 export const STATUS = {
   CONNECTED: "connected",
@@ -12,7 +13,14 @@ export const STATUS = {
   DISCONNECTED: "disconnected",
 };
 
+export const TYPE = {
+  LEADER: "leader",
+  FOLLOWER: "follower",
+};
+
 const useStore = create((set) => ({
+  type: null,
+  setType: (type) => set((state) => ({ ...state, type })),
   status: STATUS.DISCONNECTED,
   setStatus: (status) => set((state) => ({ ...state, status })),
   channelsSubscribed: [],
@@ -21,8 +29,14 @@ const useStore = create((set) => ({
 }));
 
 export function usePubSub() {
-  const { status, setStatus, channelsSubscribed, setChannelsSubscribed } =
-    useStore();
+  const {
+    status,
+    setStatus,
+    channelsSubscribed,
+    setChannelsSubscribed,
+    type,
+    setType,
+  } = useStore();
 
   const publish = (channelName, message) => {
     client.channels.get(channelName).publish(message);
@@ -33,6 +47,14 @@ export function usePubSub() {
       ...new Set(...prevChannels, channelName),
     ]);
     const channel = client.channels.get(channelName);
+    channel.presence.get((err, presences) => {
+      const isLeaderElected = Boolean(
+        presences?.find(({ data: { isLeader } }) => isLeader == true)
+      );
+      channel.presence.enter(client.clientId);
+      channel.presence.update({ isLeader: !isLeaderElected });
+      setType(isLeaderElected ? TYPE.FOLLOWER : TYPE.FOLLOWER);
+    });
     channel.subscribe(callback);
   };
 
@@ -44,12 +66,33 @@ export function usePubSub() {
   };
 
   const disconnect = () => {
-    channelsSubscribed.forEach((channel) => {
-      client.channels.get(channel).unsubscribe();
+		console.log({ channelsSubscribed })
+    channelsSubscribed?.forEach((channelName) => {
+      const channel = client.channels.get(channelName);
+      channel.leave(client.clientId);
+      channel.unsubscribe();
     });
     client.connection.close();
     setStatus(STATUS.DISCONNECTED);
   };
 
-  return { publish, subscribe, status, connect, disconnect };
+  const history = (channelName, callback) => {
+    return client.channels.get(channelName).history(callback);
+  };
+
+  const presence = (channelName, callback) => {
+    const channel = client.channels.get(channelName);
+    return channel.presence.get(callback);
+  };
+
+  return {
+    publish,
+    subscribe,
+    status,
+    connect,
+    disconnect,
+    history,
+    presence,
+    type,
+  };
 }

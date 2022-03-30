@@ -16,10 +16,18 @@ import isEqual from "lodash.isequal";
 
 const TRASH_ID = "void";
 
+export const EVENTS = [
+  "move_items_within_container",
+  "move_items_over_container",
+  "remove_item",
+  "edit_item",
+  "add_item",
+];
+
 export const defaultItems = {
-  "Like": [],
-  "Learn": [],
-  "Lack": [],
+  Like: [],
+  Learn: [],
+  Lack: [],
 };
 
 const useStore = create((set) => ({

@@ -18,7 +18,17 @@ export const Header = ({ roomId }) => {
   const router = useRouter();
   return (
     <Group position="apart" my="lg" align="baseline">
-      <Group direction="column">
+      <Group>
+        <Paper shadow="xs" p="xs" withBorder>
+          <Group>
+            <Text size="lg">
+              <span className="font-bold">{`Connection: `}</span>
+            </Text>
+            {status === STATUS.CONNECTED && <BsCheckSquareFill />}
+            {status === STATUS.CONNECTING && <BsArrowClockwise />}
+            {status === STATUS.DISCONNECTED && <BsXLg />}
+          </Group>
+        </Paper>
         <Group>
           <Paper shadow="xs" p="xs" withBorder>
             <Text size="lg">
@@ -38,16 +48,6 @@ export const Header = ({ roomId }) => {
             </Button>
           </Tooltip>
         </Group>
-          <Paper shadow="xs" p="xs" withBorder>
-          <Group>
-            <Text size="lg">
-              <span className="font-bold">{`Connection: `}</span>
-            </Text>
-            {status === STATUS.CONNECTED && <BsCheckSquareFill />}
-            {status === STATUS.CONNECTING && <BsArrowClockwise />}
-            {status === STATUS.DISCONNECTED && <BsXLg />}
-          </Group>
-        </Paper>
       </Group>
       <Button
         onClick={() => router.push("/")}

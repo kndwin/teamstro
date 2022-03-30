@@ -18,10 +18,6 @@ export function SortableItem({ id, type, payload }) {
   const textareaRef = useFocusTrap();
   const [mode, setMode] = useState(payload?.defaultMode ?? MODE.VIEW);
 
-  if (!id) {
-    return null;
-  }
-
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
   const { handleEditItem, handleRemoveItem } = useCards();

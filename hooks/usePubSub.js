@@ -66,12 +66,6 @@ export function usePubSub() {
   };
 
   const disconnect = () => {
-		console.log({ channelsSubscribed })
-    channelsSubscribed?.forEach((channelName) => {
-      const channel = client.channels.get(channelName);
-      channel.leave(client.clientId);
-      channel.unsubscribe();
-    });
     client.connection.close();
     setStatus(STATUS.DISCONNECTED);
   };

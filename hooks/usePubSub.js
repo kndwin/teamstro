@@ -3,7 +3,7 @@ import * as Ably from "ably";
 import { nanoid } from "nanoid";
 
 export const client = new Ably.Realtime({
-  key: "X7YUvw.JnUFfw:fuT085pEFQ2SH6OJWztf_40-3ImfJQ54a2vVwb3GaAA",
+  key: process.env.NEXT_PUBLIC_ABLY_API_KEY,
   clientId: nanoid(),
 });
 

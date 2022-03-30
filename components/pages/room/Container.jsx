@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import { useState } from "react";
 import {
   SortableContext,
@@ -5,7 +6,7 @@ import {
 } from "@dnd-kit/sortable";
 import { SortableItem } from "./SortableItem";
 import { useDroppable } from "@dnd-kit/core";
-import { Group, Textarea, Paper } from "@mantine/core";
+import { Group, Textarea, Kbd, useMantineColorScheme } from "@mantine/core";
 import { useFocusTrap } from "@mantine/hooks";
 import { nanoid } from "nanoid";
 
@@ -27,11 +28,12 @@ export const TYPE = {
   },
 };
 
-export function Container({ id, items, color }) {
+export function Container({ id, items, color, disableTitle }) {
   const { setNodeRef } = useDroppable({ id });
   const [isAddingCard, setIsAddingCard] = useState(false);
   const textareaRef = useFocusTrap();
   const { handleAddItem } = useCards();
+  const { colorScheme } = useMantineColorScheme();
 
   const handleAddItemSubmit = (e) => {
     e.preventDefault();
@@ -52,16 +54,16 @@ export function Container({ id, items, color }) {
       items={items}
       strategy={verticalListSortingStrategy}
     >
-      <Text className="mt-4" as="h4">
-        {TYPE[id].emoji}
-        {` `}
-        {id}
-      </Text>
+      {!disableTitle && (
+        <Text className="mt-4" as="h4">
+          {`${TYPE[id].emoji} ${id}`}
+        </Text>
+      )}
       <div className={`py-2 mt-8 ${color}`} ref={setNodeRef}>
         {items?.length === 0 ? (
-          <Text className="ml-4 blue-100 text-neutral-500">
-						{`No cards 😦, please add one!`}
-					</Text>
+          <Text disableColorScheme className="ml-4 blue-100 text-neutral-900">
+            {`No cards 😦, please add one!`}
+          </Text>
         ) : (
           <>
             {items?.map((item) => (
@@ -84,16 +86,38 @@ export function Container({ id, items, color }) {
       {isAddingCard && (
         <form
           onSubmit={handleAddItemSubmit}
-          className="p-4 rounded-lg shadow-md"
+          className={clsx(
+            "p-4 mt-4 rounded-lg shadow-lg bg-neutral-100",
+						 colorScheme === "dark" ? "bg-neutral-900" : "bg-neutral-100"
+          )}
         >
           <Group direction="column">
+            <Text className="text-xs text-neutral-400">
+              {`Press `}
+              <Kbd>Ctrl</Kbd>
+              {`+`}
+              <Kbd>Enter</Kbd>
+              {` to enter text`}
+            </Text>
             <Textarea
               name="text"
               ref={textareaRef}
               className="w-full"
-              placeholder="type here"
+              placeholder="Type here"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && e.ctrlKey) {
+                  const item = {
+                    id: nanoid(),
+                    payload: {
+                      description: e.target.value,
+                    },
+                  };
+                  handleAddItem(id, item);
+                  setIsAddingCard(false);
+                }
+              }}
             />
-            <Group position="apart" className="w-full">
+            <Group position="apart" grow className="w-full">
               <Button onClick={() => setIsAddingCard(false)} color="red">
                 {`Cancel`}
               </Button>

@@ -1,21 +1,32 @@
 import "styles/global.css";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { NextIntlProvider } from "next-intl";
-import {usePubSub} from "hooks";
+import { usePubSub } from "hooks";
+import { MantineProvider, ColorSchemeProvider } from "@mantine/core";
 
 function MyApp({ Component, pageProps }) {
+  const { connect, disconnect } = usePubSub();
+  const [colorScheme, setColorScheme] = useState("light");
+  const toggleColorScheme = (color) => {
+    setColorScheme(color || colorScheme === "light" ? "dark" : "light");
+  };
 
-	const { connect, disconnect } = usePubSub()
-
-	useEffect(() => {
-		connect()
-		return () => disconnect()
-	}, [])
+  useEffect(() => {
+    connect();
+    return () => disconnect();
+  }, []);
 
   return (
-    <NextIntlProvider messages={pageProps.messages}>
-      <Component {...pageProps} />
-    </NextIntlProvider>
+    <ColorSchemeProvider
+      colorScheme={colorScheme}
+      toggleColorScheme={toggleColorScheme}
+    >
+      <MantineProvider theme={{ colorScheme }}>
+        <NextIntlProvider messages={pageProps.messages}>
+          <Component {...pageProps} />
+        </NextIntlProvider>
+      </MantineProvider>
+    </ColorSchemeProvider>
   );
 }
 

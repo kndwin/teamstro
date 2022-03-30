@@ -1,9 +1,17 @@
+import clsx from "clsx";
 import { useState, useEffect } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { FiEdit, FiX, FiMove } from "react-icons/fi";
 
-import { ActionIcon, Group, Button, Textarea } from "@mantine/core";
+import {
+  ActionIcon,
+  Group,
+  Button,
+  Textarea,
+  Kbd,
+  useMantineColorScheme,
+} from "@mantine/core";
 import { useFocusTrap } from "@mantine/hooks";
 import { Text } from "components";
 import { useCards } from "hooks";
@@ -15,6 +23,7 @@ const MODE = {
 };
 
 export function SortableItem({ id, type, payload }) {
+  const { colorScheme } = useMantineColorScheme();
   const textareaRef = useFocusTrap();
   const [mode, setMode] = useState(payload?.defaultMode ?? MODE.VIEW);
 
@@ -46,13 +55,20 @@ export function SortableItem({ id, type, payload }) {
   const EditMode = () => (
     <form onSubmit={handleEditSubmit}>
       <Group direction="column">
+        <Text className="text-xs text-neutral-400">
+          {`Press `}
+          <Kbd>Ctrl</Kbd>
+          {`+`}
+          <Kbd>Enter</Kbd>
+          {` to enter text`}
+        </Text>
         <Textarea
           ref={textareaRef}
           name="text"
           className="w-full"
           defaultValue={payload?.description}
         />
-        <Group position="apart" className="w-full">
+        <Group position="apart" grow className="w-full">
           <Button onClick={() => handleModeChange(MODE.VIEW)} color="red">
             {`Cancel`}
           </Button>
@@ -67,7 +83,10 @@ export function SortableItem({ id, type, payload }) {
   return (
     <div
       ref={setNodeRef}
-      className="z-10 p-4 m-4 bg-white rounded-lg shadow-md"
+      className={clsx(
+        "p-4 mx-4 my-4 rounded-lg shadow-lg bg-neutral-100",
+        colorScheme === "dark" ? "bg-neutral-900" : "bg-neutral-100"
+      )}
       style={style}
     >
       <Group spacing="xs" className="z-20 w-full mb-4 ml-auto">

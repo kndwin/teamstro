@@ -1,5 +1,9 @@
 import clsx from "clsx";
-import { Title as MTitle, Text as MText } from "@mantine/core";
+import {
+  Title as MTitle,
+  Text as MText,
+  useMantineColorScheme,
+} from "@mantine/core";
 
 const variants = {
   gradient: {
@@ -12,7 +16,7 @@ const variants = {
     h4: "text-4xl",
     h5: "text-3xl",
     h6: "text-2xl",
-		p: "text-base",
+    p: "text-base",
   },
 };
 
@@ -20,13 +24,18 @@ export function Text({
   children,
   as = "p",
   gradient = "",
+  disableColorScheme = false,
   tw,
   className,
   ...props
 }) {
+  const { colorScheme } = useMantineColorScheme();
   const activeStyle = clsx(
     variants.gradient[gradient],
     variants.fontSize[as],
+    !disableColorScheme && colorScheme === "dark"
+      ? "text-neutral-200"
+      : "text-neutral-900",
     tw,
     className
   );

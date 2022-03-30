@@ -1,10 +1,11 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { DndContext, DragOverlay } from "@dnd-kit/core";
-import { Grid } from "@mantine/core";
+import { Grid, Tabs } from "@mantine/core";
 
 import { usePubSub, STATUS } from "hooks/usePubSub.js";
 import { useCards, EVENTS as CARD_EVENTS } from "hooks/useCards";
+import { useBreakpoint } from "hooks";
 import { Container, TYPE } from "./Container";
 import { SortableItem } from "./SortableItem";
 
@@ -12,6 +13,7 @@ export function Cards() {
   const router = useRouter();
   const { id: roomId } = router.query;
   const { subscribe, publish, status, history, presence } = usePubSub();
+  const { md } = useBreakpoint();
 
   const {
     sensors,
@@ -65,13 +67,32 @@ export function Cards() {
       onDragOver={handleDragOver}
       onDragStart={handleDragStart}
     >
-      <Grid>
-        {["Like", "Learn", "Lack"].map((type) => (
-          <Grid.Col key={type} span={4}>
-            <Container id={type} items={items[type]} color={TYPE[type].color} />
-          </Grid.Col>
-        ))}
-      </Grid>
+      {md ? (
+        <Grid>
+          {["Like", "Learn", "Lack"].map((type) => (
+            <Grid.Col key={type} span={4}>
+              <Container
+                id={type}
+                items={items[type]}
+                color={TYPE[type].color}
+              />
+            </Grid.Col>
+          ))}
+        </Grid>
+      ) : (
+        <Tabs color="dark">
+          {["Like", "Learn", "Lack"].map((type) => (
+            <Tabs.Tab icon={TYPE[type].emoji} key={type} label={`${type}`}>
+              <Container
+                id={type}
+                items={items[type]}
+                color={TYPE[type].color}
+								disableTitle
+              />
+            </Tabs.Tab>
+          ))}
+        </Tabs>
+      )}
       <DragOverlay>
         {activeItem ? (
           <SortableItem

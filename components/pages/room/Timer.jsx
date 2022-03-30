@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { useState, useEffect } from "react";
 import { BsPause, BsPlay, BsStop } from "react-icons/bs";
 import { format } from "date-fns";
@@ -7,7 +8,14 @@ import {
   useTimerInSeconds,
   EVENTS as TIMER_EVENTS,
 } from "hooks/useTimerInSeconds";
-import { Group, Text, NumberInput, ActionIcon, Tooltip } from "@mantine/core";
+import {
+  Group,
+  Text,
+  NumberInput,
+  ActionIcon,
+  Tooltip,
+  useMantineColorScheme,
+} from "@mantine/core";
 import { Button } from "components";
 
 const MODE = {
@@ -26,6 +34,8 @@ export const Timer = ({ roomId }) => {
     event,
     setEvent,
   } = useTimerInSeconds();
+
+  const { colorScheme } = useMantineColorScheme();
 
   const { status, publish, subscribe, history } = usePubSub();
 
@@ -85,13 +95,21 @@ export const Timer = ({ roomId }) => {
             step={1}
             classNames={{
               wrapper: "w-24",
-              input: "w-24 text-center",
+              input: clsx(
+                "w-24 text-center",
+                colorScheme === "dark" ? "text-white" : "text-black"
+              ),
               unstyledVariant: "text-7xl font-bold  h-fit w-fit",
             }}
             variant="unstyled"
             weight="bold"
           />
-          <Text className="text-4xl font-bold">{`m`}</Text>
+          <Text
+            className={clsx(
+              "text-4xl font-bold",
+              colorScheme === "dark" ? "text-white" : "text-black"
+            )}
+          >{`m`}</Text>
           <NumberInput
             value={secondsToSet}
             onChange={(second) => setSecondsToSet(second)}
@@ -100,13 +118,21 @@ export const Timer = ({ roomId }) => {
             step={1}
             classNames={{
               wrapper: "w-24",
-              input: "w-24 text-center",
+              input: clsx(
+                "w-24 text-center",
+                colorScheme === "dark" ? "text-white" : "text-black"
+              ),
               unstyledVariant: "text-7xl font-bold  h-fit w-fit",
             }}
             variant="unstyled"
             weight="bold"
           />
-          <Text className="text-4xl font-bold">{`s`}</Text>
+          <Text
+            className={clsx(
+              "text-4xl font-bold",
+              colorScheme === "dark" ? "text-white" : "text-black"
+            )}
+          >{`s`}</Text>
           <Button
             onClick={() => {
               setSeconds(
@@ -120,7 +146,10 @@ export const Timer = ({ roomId }) => {
       {mode === MODE.VIEW && (
         <Tooltip label="Click to set timer">
           <Text
-            className="cursor-pointer text-7xl"
+            className={clsx(
+              "cursor-pointer text-7xl",
+              colorScheme === "dark" ? "text-white" : "text-black"
+            )}
             weight="bold"
             onClick={() => setMode(MODE.EDIT)}
           >

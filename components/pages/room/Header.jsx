@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import { useEffect } from "react";
 import { usePubSub, STATUS } from "hooks/usePubSub";
 import { useRouter } from "next/router";
@@ -56,15 +57,40 @@ export const Header = ({ roomId }) => {
         </Tooltip>
       </Group>
       <Group>
-        <BsSunFill />
+        <BsSunFill
+          className={
+            colorScheme === "dark" ? "text-neutral-200" : "text-neutral-900"
+          }
+        />
         <Switch
           checked={colorScheme === "dark"}
           onChange={() => toggleColorScheme()}
           classNames="cursor-pointer"
           size="lg"
           color="dark"
+          classNames={{
+            input: clsx(
+              colorScheme === "dark" ? "bg-neutral-900" : "bg-neutral-200",
+              "cursor-pointer"
+            ),
+            root: "cursor-pointer",
+          }}
+					styles={{
+						input: {
+							'&:checked': {
+								backgroundColor: "rgb(23 23 23)"
+							}, 
+							'&:checked::before': {
+								borderColor: "rgb(23 23 23)"
+							}
+						}
+					}}
         />
-        <BsMoonFill />
+        <BsMoonFill
+          className={
+            colorScheme === "dark" ? "text-neutral-200" : "text-neutral-900"
+          }
+        />
         <Button
           onClick={() => router.push("/")}
           leftIcon={<BsArrowLeft />}

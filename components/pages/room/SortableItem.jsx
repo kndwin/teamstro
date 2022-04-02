@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { FiEdit, FiX, FiMove } from "react-icons/fi";
@@ -15,14 +15,13 @@ import {
 import { useFocusTrap } from "@mantine/hooks";
 import { Text } from "components";
 import { useCards } from "hooks";
-import { TYPE } from "./Container";
 
 const MODE = {
   EDIT: "edit",
   VIEW: "view",
 };
 
-export function SortableItem({ id, type, payload }) {
+export function SortableItem({ id, type, payload, metadata }) {
   const { colorScheme } = useMantineColorScheme();
   const textareaRef = useFocusTrap();
   const [mode, setMode] = useState(payload?.defaultMode ?? MODE.VIEW);
@@ -39,7 +38,7 @@ export function SortableItem({ id, type, payload }) {
     setMode(mode);
   };
 
-  const ViewMode = () => <Text>{payload.description}</Text>;
+  const ViewMode = () => <Text>{payload?.description}</Text>;
 
   const handleEditSubmit = (e) => {
     e.preventDefault();
@@ -52,7 +51,20 @@ export function SortableItem({ id, type, payload }) {
     handleModeChange(MODE.VIEW);
   };
 
-  const EditMode = () => (
+	const handleCtrlAndEnter = (e) => {
+    if (e.key === "Enter" && e.ctrlKey) {
+      const item = {
+        id: nanoid(),
+        payload: {
+          description: e.target.value,
+        },
+      };
+			handleEditItem(type, item);
+			handleModeChange(MODE.VIEW);
+		}
+	}
+
+	const EditMode = () => (
     <form onSubmit={handleEditSubmit}>
       <Group direction="column">
         <Text className="text-xs text-neutral-400">
@@ -67,6 +79,7 @@ export function SortableItem({ id, type, payload }) {
           name="text"
           className="w-full"
           defaultValue={payload?.description}
+					onKeyDown={handleCtrlAndEnter}
         />
         <Group position="apart" grow className="w-full">
           <Button onClick={() => handleModeChange(MODE.VIEW)} color="red">
@@ -89,8 +102,7 @@ export function SortableItem({ id, type, payload }) {
       )}
       style={style}
     >
-      <Group spacing="xs" className="z-20 w-full mb-4 ml-auto">
-        <span className="mr-auto">{TYPE[type]?.emoji}</span>
+      <Group position="right" spacing="xs" className="z-20 w-full mb-4 ml-auto">
         <ActionIcon onClick={() => handleModeChange(MODE.EDIT)}>
           <FiEdit />
         </ActionIcon>

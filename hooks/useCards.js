@@ -1,4 +1,3 @@
-import { useRouter } from "next/router";
 import { useRef, useEffect, useCallback } from "react";
 import create from "zustand";
 import {
@@ -25,9 +24,22 @@ export const EVENTS = [
 ];
 
 export const defaultItems = {
-  Like: [],
-  Learn: [],
-  Lack: [],
+  Like: {
+    metadata: {
+      color: "skyblue",
+      emoji: "👍",
+      label: "Like",
+    },
+    data: [{ id: "like1", payload: { description: "like 1" } }],
+  },
+  Love: {
+    metadata: {
+      color: "rose",
+      emoji: "💖",
+      label: "Love",
+    },
+    data: [{ id: "love1", payload: { description: "love 1" } }],
+  },
 };
 
 const useStore = create((set) => ({
@@ -38,14 +50,28 @@ const useStore = create((set) => ({
     });
   },
   activeItem: null,
+  container: Object.keys(defaultItems),
+  setContainer: function (fn) {
+    set(function (state) {
+      return { ...state, container: fn(state.container) };
+    });
+  },
   setActiveItem: (activeItem) => set((state) => ({ ...state, activeItem })),
   event: null,
   setEvent: (event) => set((state) => ({ ...state, event })),
 }));
 
 export function useCards() {
-  const { items, setItems, activeItem, setActiveItem, event, setEvent } =
-    useStore();
+  const {
+    items,
+    setItems,
+    container,
+    setContainer,
+    activeItem,
+    setActiveItem,
+    event,
+    setEvent,
+  } = useStore();
 
   const recentlyMovedToNewContainer = useRef(false);
   const lastOverId = useRef(null);
@@ -121,12 +147,19 @@ export function useCards() {
   );
 
   const findContainer = (id) => {
+    // if id is a container, return id
     if (id in items) {
       return id;
     }
-    return Object.keys(items).find((key) =>
-      items[key].some(({ id: itemId }) => itemId == id)
-    );
+
+    // if if is an item within container, find item and return
+    return Object.keys(items).find((type) => {
+      const { data } = items[type];
+      const container = data.find((key) =>
+        data.some(({ id: itemId }) => itemId == id)
+      );
+      return container?.id;
+    });
   };
 
   const handleDragEnd = (event) => {
@@ -141,21 +174,20 @@ export function useCards() {
       return;
     }
 
-    const activeIndex = items[activeContainer].findIndex(
+    const activeIndex = items[activeContainer].data.findIndex(
       (item) => item.id === active.id
     );
-    const overIndex = items[overContainer].findIndex(
+    const overIndex = items[overContainer].data.findIndex(
       (item) => item.id === over.id
     );
 
     if (activeIndex !== overIndex) {
       const newItems = {
         ...items,
-        [overContainer]: arrayMove(
-          items[overContainer],
-          activeIndex,
-          overIndex
-        ),
+        [overContainer]: {
+          metadata: items[overContainer].metadata,
+          data: arrayMove(items[overContainer].data, activeIndex, overIndex),
+        },
       };
       setEvent({
         state: "ready",
@@ -168,10 +200,20 @@ export function useCards() {
   };
 
   const handleDragStart = (event) => {
-    const activeContainer = findContainer(event.active.id);
-    setActiveItem(
-      items[activeContainer].find((item) => item.id === event.active.id)
-    );
+    const id = event.active.id;
+    // if handle is grabbing container, set container as active
+    if (id in items) {
+      const activeContainer = { id, ...items[id] };
+      setActiveItem(activeContainer);
+    }
+    // else handle is grabbing item in container, set item id as active
+    else {
+      const activeContainer = findContainer(id);
+      const activeItemToSet = items[activeContainer]?.data?.find(
+        (item) => item.id === event.active.id
+      );
+      setActiveItem(activeItemToSet);
+    }
   };
 
   const handleDragOver = (event) => {
@@ -187,10 +229,19 @@ export function useCards() {
       return;
     }
 
+    if (container.includes(active.id) && container.includes(over.id)) {
+      const activeIndex = container.findIndex((id) => id === active.id);
+      const overIndex = container.findIndex((id) => id === over.id);
+      setContainer((prevContainer) =>
+        arrayMove(container, activeIndex, overIndex)
+      );
+      return;
+    }
+
     setActiveItem(null);
 
-    const activeItems = items[activeContainer];
-    const overItems = items[overContainer];
+    const activeItems = items[activeContainer]?.data;
+    const overItems = items[overContainer]?.data;
     const activeIndex = activeItems.findIndex((item) => item.id === active.id);
     const overIndex = overItems.findIndex((item) => item.id === over.id);
     let newIndex;
@@ -207,14 +258,25 @@ export function useCards() {
     }
     const newItems = {
       ...items,
-      [activeContainer]: [
-        ...items[activeContainer].filter((item) => item.id !== active.id),
-      ],
-      [overContainer]: [
-        ...items[overContainer].slice(0, newIndex),
-        items[activeContainer][activeIndex],
-        ...items[overContainer].slice(newIndex, items[overContainer].length),
-      ],
+      [activeContainer]: {
+        metadata: items[activeContainer].metadata,
+        data: [
+          ...items[activeContainer].data.filter(
+            (item) => item.id !== active.id
+          ),
+        ],
+      },
+      [overContainer]: {
+        metadata: items[overContainer].metadata,
+        data: [
+          ...items[overContainer].data.slice(0, newIndex),
+          items[activeContainer].data[activeIndex],
+          ...items[overContainer].data.slice(
+            newIndex,
+            items[overContainer].data.length
+          ),
+        ],
+      },
     };
 
     setEvent({
@@ -229,9 +291,7 @@ export function useCards() {
   const handleRemoveItem = (type, itemId) => {
     try {
       const newItems = { ...items };
-      newItems[type] = items[type].filter(({ id }) => id !== itemId);
-
-      console.log({ newItems });
+      newItems[type].data = items[type].data.filter(({ id }) => id !== itemId);
 
       setEvent({
         state: "ready",
@@ -246,9 +306,9 @@ export function useCards() {
   };
 
   const handleEditItem = (type, item) => {
-    const itemIndex = items[type].findIndex(({ id }) => id === item.id);
+    const itemIndex = items[type].data.findIndex(({ id }) => id === item.id);
     const newItems = { ...items };
-    newItems[type][itemIndex] = item;
+    newItems[type].data[itemIndex] = item;
     setEvent({
       state: "ready",
       name: "edit_item",
@@ -260,7 +320,10 @@ export function useCards() {
   const handleAddItem = (type, item) => {
     const newItems = {
       ...items,
-      [type]: [...items[type], item],
+      [type]: {
+        metadata: items[type].metadata,
+        data: [...items[type].data, item],
+      },
     };
     setEvent({
       state: "ready",
@@ -281,6 +344,22 @@ export function useCards() {
     });
   };
 
+  const handleAddContainer = (container) => {
+    const newItems = {
+      ...items,
+      [container?.id]: {
+        metadata: [container?.metadata],
+        data: [...container?.data],
+      },
+    };
+    setEvent({
+      state: "ready",
+      name: "add_container",
+      data: { items: newItems },
+    });
+    setItems((prevItems) => newItems);
+  };
+
   return {
     findContainer,
     handleDragStart,
@@ -290,6 +369,8 @@ export function useCards() {
     handleEditItem,
     handleAddItem,
     handleSubscriptionUpdate,
+    handleAddContainer,
+    container,
     items,
     activeItem,
     sensors,

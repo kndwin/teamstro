@@ -26,6 +26,7 @@ export function Cards() {
     collisionDetectionStrategy,
     event,
     setEvent,
+    container,
   } = useCards();
 
   useEffect(() => {
@@ -58,6 +59,21 @@ export function Cards() {
     }
   }, [status]);
 
+  const renderContainerDragOverlay = (activeContainer) => {
+    return (
+      <Container
+        id={activeContainer.id}
+        items={activeContainer.data}
+        metadata={activeContainer.metadata}
+        disableTitle
+      />
+    );
+  };
+
+  const renderSortableItemDragOverlay = (activeItem) => {
+    return <SortableItem id={activeItem.id} payload={activeItem.payload} />;
+  };
+
   return (
     <DndContext
       id="cards-context"
@@ -68,39 +84,39 @@ export function Cards() {
       onDragStart={handleDragStart}
     >
       {md ? (
-        <Grid>
-          {["Like", "Learn", "Lack"].map((type) => (
-            <Grid.Col key={type} span={4}>
-              <Container
-                id={type}
-                items={items[type]}
-                color={TYPE[type].color}
-              />
-            </Grid.Col>
-          ))}
+        <Grid className="mt-4">
+          {container?.map((type) => {
+            const { data, metadata } = items[type];
+            return (
+              <Grid.Col key={type} span={4}>
+                <Container id={type} items={data} metadata={metadata} />
+              </Grid.Col>
+            );
+          })}
         </Grid>
       ) : (
         <Tabs color="dark">
-          {["Like", "Learn", "Lack"].map((type) => (
-            <Tabs.Tab icon={TYPE[type].emoji} key={type} label={`${type}`}>
-              <Container
-                id={type}
-                items={items[type]}
-                color={TYPE[type].color}
-								disableTitle
-              />
-            </Tabs.Tab>
-          ))}
+          {container?.map((type) => {
+            const { data, metadata } = items[type];
+            return (
+              <Tabs.Tab icon={metadata?.emoji} key={type} label={`${type}`}>
+                <Container
+                  id={type}
+                  items={data}
+                  metadata={metadata}
+                  disableTitle
+                />
+              </Tabs.Tab>
+            );
+          })}
         </Tabs>
       )}
       <DragOverlay>
-        {activeItem ? (
-          <SortableItem
-            id={activeItem.id}
-            type={activeItem.type}
-            payload={activeItem.payload}
-          />
-        ) : null}
+        {activeItem
+          ? container.includes(activeItem.id)
+            ? renderContainerDragOverlay(activeItem)
+            : renderSortableItemDragOverlay(activeItem)
+          : null}
       </DragOverlay>
     </DndContext>
   );

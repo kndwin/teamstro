@@ -126,7 +126,7 @@ const DarkModeSwitch = () => {
       <Switch
         checked={colorScheme === "dark"}
         onChange={() => toggleColorScheme()}
-        classNames="cursor-pointer"
+        className="cursor-pointer"
         size="lg"
         color="dark"
         classNames={{

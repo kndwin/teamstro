@@ -15,30 +15,41 @@ import isEqual from "lodash.isequal";
 
 const TRASH_ID = "void";
 
-export const EVENTS = [
+const CARD_EVENTS = [
   "move_items_within_container",
   "move_items_over_container",
+  "edit_container_metadata",
   "remove_item",
   "edit_item",
   "add_item",
 ];
+const CONTAINER_EVENT = ["move_container"];
+const CARD_AND_CONTAINER_EVENT = ["add_container", "remove_container"];
 
 export const defaultItems = {
   Like: {
     metadata: {
+      id: "Like",
       color: "skyblue",
-      emoji: "👍",
       label: "Like",
     },
-    data: [{ id: "like1", payload: { description: "like 1" } }],
+    data: [],
   },
   Love: {
     metadata: {
+      id: "Love",
       color: "rose",
-      emoji: "💖",
       label: "Love",
     },
-    data: [{ id: "love1", payload: { description: "love 1" } }],
+    data: [],
+  },
+  Lacked: {
+    metadata: {
+      id: "Lacked",
+      color: "yellow",
+      label: "Lacked",
+    },
+    data: [],
   },
 };
 
@@ -50,10 +61,10 @@ const useStore = create((set) => ({
     });
   },
   activeItem: null,
-  container: Object.keys(defaultItems),
-  setContainer: function (fn) {
+  containers: Object.keys(defaultItems),
+  setContainers: function (fn) {
     set(function (state) {
-      return { ...state, container: fn(state.container) };
+      return { ...state, containers: fn(state.containers) };
     });
   },
   setActiveItem: (activeItem) => set((state) => ({ ...state, activeItem })),
@@ -65,8 +76,8 @@ export function useCards() {
   const {
     items,
     setItems,
-    container,
-    setContainer,
+    containers,
+    setContainers,
     activeItem,
     setActiveItem,
     event,
@@ -229,12 +240,20 @@ export function useCards() {
       return;
     }
 
-    if (container.includes(active.id) && container.includes(over.id)) {
-      const activeIndex = container.findIndex((id) => id === active.id);
-      const overIndex = container.findIndex((id) => id === over.id);
-      setContainer((prevContainer) =>
-        arrayMove(container, activeIndex, overIndex)
-      );
+    if (containers.includes(active.id) && containers.includes(over.id)) {
+      const activeIndex = containers.findIndex((id) => id === active.id);
+      const overIndex = containers.findIndex((id) => id === over.id);
+      const newContainers = arrayMove(containers, activeIndex, overIndex);
+      const areContainerDifferent = !isEqual(containers, newContainers);
+
+      if (areContainerDifferent) {
+        setEvent({
+          state: "ready",
+          name: "move_container",
+          data: { containers: newContainers },
+        });
+        setContainers((prevContainers) => newContainers);
+      }
       return;
     }
 
@@ -333,31 +352,86 @@ export function useCards() {
     setItems((prevItems) => newItems);
   };
 
-  const handleSubscriptionUpdate = (updatedItems) => {
-    setItems((prevItems) => {
-      const diff = !isEqual(prevItems, updatedItems);
-      if (Boolean(diff)) {
-        return updatedItems;
-      } else {
-        return prevItems;
-      }
-    });
-  };
-
-  const handleAddContainer = (container) => {
+  const handleAddContainer = ({ container, containerId }) => {
     const newItems = {
       ...items,
-      [container?.id]: {
-        metadata: [container?.metadata],
-        data: [...container?.data],
-      },
+      ...container,
     };
+    const newContainers = [...containers, containerId];
     setEvent({
       state: "ready",
       name: "add_container",
-      data: { items: newItems },
+      data: { items: newItems, containers: newContainers },
+    });
+
+    setItems((prevItems) => newItems);
+    setContainers((prevContainer) => newContainers);
+  };
+
+  const handleEditContainerMetadata = ({ containerId, metadata }) => {
+    const newItems = {
+      ...items,
+      [containerId]: {
+        metadata: { ...metadata },
+        data: items[containerId].data,
+      },
+    };
+    const areItemsDifferent = !isEqual(items, newItems);
+    if (areItemsDifferent) {
+      setEvent({
+        state: "ready",
+        name: "edit_container_metadata",
+        data: { items: newItems },
+      });
+      setItems((prevItems) => newItems);
+    }
+  };
+
+  const handleRemoveContainer = ({ containerId }) => {
+    const newItems = { ...items };
+    delete newItems[containerId];
+    const newContainers = containers.filter((id) => id !== containerId);
+    setEvent({
+      state: "ready",
+      name: "remove_container",
+      data: { items: newItems, containers: newContainers },
     });
     setItems((prevItems) => newItems);
+    setContainers((prevContainers) => newContainers);
+  };
+
+  const handleSubscriptionUpdate = ({ type, payload }) => {
+    const isCardAndContainerEvent = CARD_AND_CONTAINER_EVENT.includes(type);
+    console.log({
+      type,
+      payload,
+      CARD_AND_CONTAINER_EVENT,
+      isCardAndContainerEvent,
+    });
+    const newContainers = payload?.containers;
+    const newItems = payload?.items;
+
+    if (CARD_AND_CONTAINER_EVENT.includes(type)) {
+      console.log({ type, newContainers, newItems });
+      setItems((prevItems) => {
+        return !isEqual(prevItems, newItems) ? newItems : prevItems;
+      });
+      setContainers((prevContainers) => {
+        return !isEqual(prevContainers, newContainers)
+          ? newContainers
+          : prevContainers;
+      });
+    } else if (CARD_EVENTS.includes(type)) {
+      setItems((prevItems) => {
+        return !isEqual(prevItems, newItems) ? newItems : prevItems;
+      });
+    } else if (CONTAINER_EVENT.includes(type)) {
+      setContainers((prevContainers) => {
+        return !isEqual(prevContainers, newContainers)
+          ? newContainers
+          : prevContainers;
+      });
+    }
   };
 
   return {
@@ -370,7 +444,9 @@ export function useCards() {
     handleAddItem,
     handleSubscriptionUpdate,
     handleAddContainer,
-    container,
+    handleEditContainerMetadata,
+    handleRemoveContainer,
+    containers,
     items,
     activeItem,
     sensors,

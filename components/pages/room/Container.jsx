@@ -5,31 +5,25 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { SortableItem } from "./SortableItem";
-import { useDroppable } from "@dnd-kit/core";
 import {
   Group,
   Textarea,
   Kbd,
   useMantineColorScheme,
-  Paper,
-  Input,
-  Popover,
+  TextInput,
+  ColorSwatch,
   ActionIcon,
 } from "@mantine/core";
 import { useSortable } from "@dnd-kit/sortable";
 import { useFocusTrap } from "@mantine/hooks";
 import { nanoid } from "nanoid";
-import { FiMoreHorizontal, FiMove } from "react-icons/fi";
+import { FiMove, FiCheck } from "react-icons/fi";
 
-import { Text, Button } from "components";
+import { Text, Button, Popover } from "components";
 import { useCards } from "hooks";
+import { COLORS } from "styles/colors";
 
-const containerColors = {
-  rose: "bg-rose-100",
-  skyblue: "bg-sky-100",
-};
-
-export function Container({ id, items, metadata, disableTitle }) {
+export function Container({ id, items, metadata, disableHeader }) {
   const [isAddingCard, setIsAddingCard] = useState(false);
   const textareaRef = useFocusTrap();
   const { handleAddItem } = useCards();
@@ -73,16 +67,20 @@ export function Container({ id, items, metadata, disableTitle }) {
         ref={setNodeRef}
         className={clsx(
           colorScheme === "dark" ? "bg-neutral-800" : "bg-neutral-100",
-					"p-4"
+          "p-4}"
         )}
       >
-        <Title
-          disableTitle={disableTitle}
-          metadata={metadata}
-          handles={{ ...attributes, ...listeners }}
-        />
+        {!disableHeader && (
+          <Header
+            metadata={metadata}
+            handles={{ ...attributes, ...listeners }}
+          />
+        )}
 
-        <div className={`py-2 mt-8 ${containerColors[metadata?.color]}`}>
+        <div
+          style={{ backgroundColor: COLORS[metadata?.color]?.rgb }}
+          className={`py-2 mt-8`}
+        >
           {items?.length === 0 ? (
             <Text disableColorScheme className="ml-4 blue-100 text-neutral-900">
               {`No cards 😦, please add one!`}
@@ -146,70 +144,101 @@ export function Container({ id, items, metadata, disableTitle }) {
   );
 }
 
-const MODE = {
-  VIEW: "view",
-  EDIT: "edit",
-};
-
-const Title = ({ metadata, handles, disableTitle }) => {
-  const [showEditPopper, setShowEditPopper] = useState(false);
-  const [label, setLabel] = useState(metadata?.label);
+const Header = ({ metadata, handles }) => {
   const { colorScheme } = useMantineColorScheme();
-
-  const MoreIcon = () => (
-    <ActionIcon
-      onClick={() => setShowEditPopper(!showEditPopper)}
-      width={24}
-      size="xl"
-      color="dark"
-    >
-      <FiMoreHorizontal size={24} />
-    </ActionIcon>
-  );
-
-  const handleLabelUpdate = (e) => {
-    const labelToSet = e.target.value;
-    console.log({ labelToSet });
-  };
 
   return (
     <Group position="apart" align="center">
-      <Text
-        className="cursor-pointer"
-        as="h4"
-        onClick={() => handleToggleTitleMode()}
-      >
-        {`${metadata?.label}`}
-      </Text>
+      <Text className="text-xl font-bold">{`${metadata?.label}`}</Text>
 
       <Group>
-        <Popover
-          opened={showEditPopper}
-          onClose={() => setShowEditPopper(false)}
-          target={<MoreIcon />}
-          position="bottom"
-          placement="end"
-          width="100%"
-          radius="md"
-          classNames={{
-            popover:
-              colorScheme === "dark" ? "bg-neutral-900" : "bg-neutral-100",
-          }}
-        >
-          <Paper>
-            <Group direction="column" grow>
-              <Input
-                defaultValue={metadata?.label}
-                onBlur={handleLabelUpdate}
-              />
-              <Button color="red">{`Delete container`}</Button>
-            </Group>
-          </Paper>
-        </Popover>
+        <EditContainerPopover metadata={metadata} />
         <ActionIcon {...handles} width={24} size="xl" color="dark">
-          <FiMove size={24} />
+          <FiMove
+            className={
+              colorScheme === "dark" ? "text-neutral-200" : "text-neutral-900"
+            }
+            size={24}
+          />
         </ActionIcon>
       </Group>
+    </Group>
+  );
+};
+
+const EditContainerPopover = ({ metadata }) => {
+  const [openPopover, setOpenPopover] = useState(false);
+  const { handleEditContainerMetadata, handleRemoveContainer } = useCards();
+  const [colorChecked, setColorChecked] = useState("rose");
+
+  const handleLabelUpdate = (e) => {
+    const label = e.target.value;
+    handleEditContainerMetadata({
+      containerId: metadata.id,
+      metadata: { ...metadata, label },
+    });
+  };
+
+  const handleColorSelection = (color) => {
+    setColorChecked(color);
+    handleEditContainerMetadata({
+      containerId: metadata.id,
+      metadata: { ...metadata, color },
+    });
+  };
+
+  const handleDeleteContainer = ({ containerId }) => {
+    handleRemoveContainer({ containerId });
+    setOpenPopover(false);
+  };
+
+  return (
+    <Popover
+      open={openPopover}
+      setOpen={setOpenPopover}
+      placement="end"
+      position="bottom"
+    >
+      <Group direction="column" grow>
+        <TextInput defaultValue={metadata?.label} onBlur={handleLabelUpdate} />
+        <ColorPalette
+          colorChecked={colorChecked}
+          handleColorSelection={handleColorSelection}
+        />
+        <Button
+          onClick={() => handleDeleteContainer({ containerId: metadata.id })}
+          color="red"
+        >{`Delete container`}</Button>
+      </Group>
+    </Popover>
+  );
+};
+
+export const ColorPalette = ({
+  colorChecked,
+  setColorChecked,
+  handleColorSelection,
+}) => {
+  const onClick = (color) => {
+    Boolean(handleColorSelection)
+      ? handleColorSelection(color)
+      : setColorChecked(color);
+  };
+
+  return (
+    <Group spacing="xs">
+      {Object.keys(COLORS).map((color) => {
+        return (
+          <ColorSwatch
+            onClick={() => onClick(color)}
+            key={color}
+            color={COLORS[color].rgb}
+            className="cursor-pointer"
+          >
+            {colorChecked === color ? <FiCheck /> : null}
+          </ColorSwatch>
+        );
+      })}
     </Group>
   );
 };

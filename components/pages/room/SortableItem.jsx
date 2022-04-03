@@ -51,20 +51,20 @@ export function SortableItem({ id, type, payload, metadata }) {
     handleModeChange(MODE.VIEW);
   };
 
-	const handleCtrlAndEnter = (e) => {
+  const handleCtrlAndEnter = (e) => {
     if (e.key === "Enter" && e.ctrlKey) {
       const item = {
-        id: nanoid(),
+        id,
         payload: {
           description: e.target.value,
         },
       };
-			handleEditItem(type, item);
-			handleModeChange(MODE.VIEW);
-		}
-	}
+      handleEditItem(type, item);
+      handleModeChange(MODE.VIEW);
+    }
+  };
 
-	const EditMode = () => (
+  const EditMode = () => (
     <form onSubmit={handleEditSubmit}>
       <Group direction="column">
         <Text className="text-xs text-neutral-400">
@@ -79,7 +79,7 @@ export function SortableItem({ id, type, payload, metadata }) {
           name="text"
           className="w-full"
           defaultValue={payload?.description}
-					onKeyDown={handleCtrlAndEnter}
+          onKeyDown={handleCtrlAndEnter}
         />
         <Group position="apart" grow className="w-full">
           <Button onClick={() => handleModeChange(MODE.VIEW)} color="red">

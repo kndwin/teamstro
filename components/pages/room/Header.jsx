@@ -27,6 +27,7 @@ export const Header = ({ roomId }) => {
   const router = useRouter();
   const { status } = usePubSub();
   const clipboard = useClipboard({ timeout: 500 });
+  const { colorScheme } = useMantineColorScheme();
   const { sm } = useBreakpoint();
 
   const statusObj = {
@@ -38,7 +39,7 @@ export const Header = ({ roomId }) => {
     [STATUS.CONNECTING]: {
       icon: BsXLg,
       color: COLORS.yellow.rgb,
-      text: "Connecting",
+      text: "Not ready",
     },
     [STATUS.DISCONNECTED]: {
       icon: <BsXLg />,
@@ -52,27 +53,45 @@ export const Header = ({ roomId }) => {
       {sm ? (
         <>
           <Group>
-            <Paper
-              style={{ backgroundColor: statusObj[status].color }}
-              shadow="xs"
-              p="xs"
-              withBorder
+            <Tooltip
+              opened={status === STATUS.CONNECTING}
+              position="bottom"
+              placement="end"
+              withArrow
+              gutter={15}
+              width={170}
+              wrapLines
+              label={
+                status === STATUS.CONNECTING &&
+                `If "Not ready" for too long, please refresh the browser`
+              }
             >
-              <Group>
-                <Text size="lg">
-                  <span className="font-bold">{`Connection: `}</span>
-                </Text>
-                {<>{statusObj[status].icon}</>}
-                <Text>{statusObj[status].text}</Text>
-              </Group>
-            </Paper>
+              <Paper
+                style={{ backgroundColor: statusObj[status].color }}
+                className={clsx("text-neutral-900")}
+                shadow="xs"
+                p="xs"
+                withBorder
+              >
+                <Group>
+                  <Text size="lg" weight="bold">
+                    {statusObj[status].text}
+                  </Text>
+                </Group>
+              </Paper>
+            </Tooltip>
             <Tooltip label="Click to copy URL" position="right">
               <Paper
                 onClick={() => clipboard.copy(window.location.href)}
                 shadow="xs"
                 p="xs"
                 withBorder
-                className="cursor-pointer"
+                className={clsx(
+                  colorScheme === "dark"
+                    ? "text-neutral-100"
+                    : "text-neutral-900",
+                  "cursor-pointer"
+                )}
               >
                 <Text size="lg">
                   <span className="font-bold">{`Room ID: `}</span>
@@ -92,6 +111,15 @@ export const Header = ({ roomId }) => {
         </>
       ) : (
         <>
+          <Paper
+            style={{ backgroundColor: statusObj[status].color }}
+            className={clsx("text-neutral-900")}
+            shadow="xs"
+            p="xs"
+            withBorder
+          >
+            {statusObj[status].icon}
+          </Paper>
           <Tooltip label="Click to copy URL" position="right">
             <Paper
               onClick={() => clipboard.copy(window.location.href)}

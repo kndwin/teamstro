@@ -401,18 +401,10 @@ export function useCards() {
   };
 
   const handleSubscriptionUpdate = ({ type, payload }) => {
-    const isCardAndContainerEvent = CARD_AND_CONTAINER_EVENT.includes(type);
-    console.log({
-      type,
-      payload,
-      CARD_AND_CONTAINER_EVENT,
-      isCardAndContainerEvent,
-    });
     const newContainers = payload?.containers;
     const newItems = payload?.items;
 
     if (CARD_AND_CONTAINER_EVENT.includes(type)) {
-      console.log({ type, newContainers, newItems });
       setItems((prevItems) => {
         return !isEqual(prevItems, newItems) ? newItems : prevItems;
       });
@@ -426,11 +418,16 @@ export function useCards() {
         return !isEqual(prevItems, newItems) ? newItems : prevItems;
       });
     } else if (CONTAINER_EVENT.includes(type)) {
-      setContainers((prevContainers) => {
-        return !isEqual(prevContainers, newContainers)
-          ? newContainers
-          : prevContainers;
-      });
+      // It gets buggy when the event is published when you are
+      // holding up a container so this checks for if there's
+      // an active container being held and only set the containers if not
+      if (!containers.includes(activeItem)) {
+        setContainers((prevContainers) => {
+          return !isEqual(prevContainers, newContainers)
+            ? newContainers
+            : prevContainers;
+        });
+      }
     }
   };
 

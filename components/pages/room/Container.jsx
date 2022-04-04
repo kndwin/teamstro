@@ -25,36 +25,7 @@ import { COLORS } from "styles/colors";
 
 export function Container({ id, items, metadata, disableHeader }) {
   const [isAddingCard, setIsAddingCard] = useState(false);
-  const textareaRef = useFocusTrap();
-  const { handleAddItem } = useCards();
   const { colorScheme } = useMantineColorScheme();
-
-  const handleAddItemSubmit = (e) => {
-    e.preventDefault();
-    const { text } = e.currentTarget.elements;
-    const item = {
-      id: nanoid(),
-      payload: {
-        description: text.value,
-      },
-    };
-    handleAddItem(id, item);
-    setIsAddingCard(false);
-  };
-
-  const handleCtrlAndEnter = (e) => {
-    if (e.key === "Enter" && e.ctrlKey) {
-      const item = {
-        id: nanoid(),
-        payload: {
-          description: e.target.value,
-        },
-      };
-      handleAddItem(id, item);
-      setIsAddingCard(false);
-    }
-  };
-
   const { setNodeRef, listeners, attributes } = useSortable({ id });
 
   return (
@@ -106,44 +77,79 @@ export function Container({ id, items, metadata, disableHeader }) {
           >{`Add Card`}</Button>
         </Group>
         {isAddingCard && (
-          <form
-            onSubmit={handleAddItemSubmit}
-            className={clsx(
-              "p-4 mt-4 rounded-lg shadow-lg bg-neutral-100",
-              colorScheme === "dark" ? "bg-neutral-900" : "bg-neutral-100"
-            )}
-          >
-            <Group direction="column">
-              <Text className="text-xs text-neutral-400">
-                {`Press `}
-                <Kbd>Ctrl</Kbd>
-                {`+`}
-                <Kbd>Enter</Kbd>
-                {` to enter text`}
-              </Text>
-              <Textarea
-                name="text"
-                ref={textareaRef}
-                className="w-full"
-                placeholder="Type here"
-                onKeyDown={handleCtrlAndEnter}
-              />
-              <Group position="apart" grow className="w-full">
-                <Button onClick={() => setIsAddingCard(false)} color="red">
-                  {`Cancel`}
-                </Button>
-                <Button type="submit" color="dark">
-                  {`Add`}
-                </Button>
-              </Group>
-            </Group>
-          </form>
+          <AddNewCard containerId={id} setIsAddingCard={setIsAddingCard} />
         )}
       </div>
     </SortableContext>
   );
 }
 
+const AddNewCard = ({ containerId, setIsAddingCard }) => {
+  const { handleAddItem } = useCards();
+  const textareaRef = useFocusTrap();
+  const { colorScheme } = useMantineColorScheme();
+
+  const handleAddItemSubmit = (e) => {
+    e.preventDefault();
+    const { text } = e.currentTarget.elements;
+    const item = {
+      id: nanoid(),
+      payload: {
+        description: text.value,
+      },
+    };
+    handleAddItem(containerId, item);
+    setIsAddingCard(false);
+  };
+
+  const handleCtrlAndEnter = (e) => {
+    if (e.key === "Enter" && e.ctrlKey) {
+      const item = {
+        id: nanoid(),
+        payload: {
+          description: e.target.value,
+        },
+      };
+      handleAddItem(containerId, item);
+      setIsAddingCard(false);
+    }
+  };
+
+  return (
+    <form
+      onSubmit={handleAddItemSubmit}
+      className={clsx(
+        "p-4 mt-4 rounded-lg shadow-lg bg-neutral-100",
+        colorScheme === "dark" ? "bg-neutral-900" : "bg-neutral-100"
+      )}
+    >
+      <Group direction="column">
+        <Text className="items-center text-xs">
+          {`Press `}
+          <Kbd>Ctrl</Kbd>
+          {` + `}
+          <Kbd>Enter</Kbd>
+          {` to enter text`}
+        </Text>
+        <Textarea
+          name="text"
+          ref={textareaRef}
+          className="w-full"
+          placeholder="Type here"
+          onKeyDown={handleCtrlAndEnter}
+        />
+        <Group position="apart" grow className="w-full">
+          <Button onClick={() => setIsAddingCard(false)} color="red">
+            {`Cancel`}
+          </Button>
+          <Button type="submit" color="dark">
+            {`Add`}
+          </Button>
+        </Group>
+      </Group>
+    </form>
+  );
+};
 const Header = ({ metadata, handles }) => {
   const { colorScheme } = useMantineColorScheme();
 

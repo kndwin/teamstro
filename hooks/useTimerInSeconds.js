@@ -13,6 +13,8 @@ export const STATE = {
 export const EVENTS = ["play_timer", "pause_timer", "stop_timer"];
 
 const useStore = create((set) => ({
+  isCountingComplete: false,
+  setIsCountingComplete: (isCountingComplete) => set((state) => ({ ...state, isCountingComplete })),
   seconds: defaultTimerInSeconds,
   setSeconds: (seconds) => set((state) => ({ ...state, seconds })),
   state: STATE.PAUSED,
@@ -22,7 +24,16 @@ const useStore = create((set) => ({
 }));
 
 export const useTimerInSeconds = () => {
-  const { seconds, state, setSeconds, setState, event, setEvent } = useStore();
+  const {
+    seconds,
+    state,
+    setSeconds,
+    setState,
+    event,
+    setEvent,
+    isCountingComplete,
+    setIsCountingComplete,
+  } = useStore();
 
   const play = () => {
     setState(STATE.PLAY);
@@ -70,6 +81,13 @@ export const useTimerInSeconds = () => {
     return () => clearInterval(intervalId);
   });
 
+  useEffect(() => {
+    if (seconds === 0 && state === STATE.PLAY) {
+      setIsCountingComplete(true);
+      setState(STATE.STOPPED);
+    }
+  }, [seconds]);
+
   const handleSubscriptionUpdate = ({ state, seconds }) => {
     if (Boolean(seconds)) {
       setSeconds(seconds);
@@ -90,5 +108,7 @@ export const useTimerInSeconds = () => {
     handleSubscriptionUpdate,
     event,
     setEvent,
+    isCountingComplete,
+    setIsCountingComplete,
   };
 };

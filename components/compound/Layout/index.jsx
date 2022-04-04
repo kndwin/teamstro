@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Container, useMantineColorScheme, Box } from "@mantine/core";
+import { useMantineColorScheme, Box } from "@mantine/core";
 import Head from "next/head";
 
 const defaultSeo = {
@@ -14,17 +14,16 @@ export function Layout({ children, seo = defaultSeo, className, tw }) {
     <Box
       className={clsx(
         "w-full h-full min-h-screen min-w-screen",
-        colorScheme === "dark" ? "bg-neutral-800" : "bg-neutral-100"
+        colorScheme === "dark" ? "bg-neutral-800" : "bg-neutral-100",
+				"overflow-hidden"
       )}
     >
-      <Container>
-        <Head>
-          <title>{seo.title}</title>
-          <meta name="description" content={seo.description} />
-          <link rel="icon" href="/favicon.ico" />
-        </Head>
-        <main className={activeStyle}>{children}</main>
-      </Container>
+      <Head>
+        <title>{seo.title}</title>
+        <meta name="description" content={seo.description} />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <main className={activeStyle}>{children}</main>
     </Box>
   );
 }

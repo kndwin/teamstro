@@ -1,38 +1,92 @@
-import clsx from 'clsx'
-import { useState } from "react";
+import clsx from "clsx";
+import { useState, useEffect } from "react";
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { SortableItem } from "./SortableItem";
-import { useDroppable } from "@dnd-kit/core";
-import { Group, Textarea, Kbd, useMantineColorScheme } from "@mantine/core";
+import {
+  Group,
+  Textarea,
+  Kbd,
+  useMantineColorScheme,
+  TextInput,
+  ColorSwatch,
+  ActionIcon,
+} from "@mantine/core";
+import { useSortable } from "@dnd-kit/sortable";
 import { useFocusTrap } from "@mantine/hooks";
 import { nanoid } from "nanoid";
+import { FiMove, FiCheck } from "react-icons/fi";
 
-import { Text, Button } from "components";
+import { Text, Button, Popover } from "components";
 import { useCards } from "hooks";
+import { COLORS } from "styles/colors";
 
-export const TYPE = {
-  Like: {
-    emoji: "👍",
-    color: "bg-rose-100",
-  },
-  Learn: {
-    emoji: "🤓",
-    color: "bg-amber-100",
-  },
-  Lack: {
-    emoji: "🤔",
-    color: "bg-sky-100",
-  },
-};
-
-export function Container({ id, items, color, disableTitle }) {
-  const { setNodeRef } = useDroppable({ id });
+export function Container({ id, items, metadata, disableHeader }) {
   const [isAddingCard, setIsAddingCard] = useState(false);
-  const textareaRef = useFocusTrap();
+  const { colorScheme } = useMantineColorScheme();
+  const { setNodeRef, listeners, attributes } = useSortable({ id });
+
+  return (
+    <SortableContext
+      id={id}
+      items={items}
+      strategy={verticalListSortingStrategy}
+    >
+      <div
+        ref={setNodeRef}
+        className={clsx(
+          colorScheme === "dark" ? "bg-neutral-800" : "bg-neutral-100",
+          "p-4}"
+        )}
+      >
+        {!disableHeader && (
+          <Header
+            metadata={metadata}
+            handles={{ ...attributes, ...listeners }}
+          />
+        )}
+
+        <div
+          style={{ backgroundColor: COLORS[metadata?.color]?.rgb }}
+          className={`py-2 mt-8`}
+        >
+          {items?.length === 0 ? (
+            <Text disableColorScheme className="ml-4 blue-100 text-neutral-900">
+              {`No cards 😦, please add one!`}
+            </Text>
+          ) : (
+            <>
+              {items?.map((item) => (
+                <SortableItem
+                  key={item?.id}
+                  id={item?.id}
+                  type={id}
+                  payload={item?.payload}
+                  metadata={metadata}
+                />
+              ))}
+            </>
+          )}
+        </div>
+        <Group position="center" className="pt-4">
+          <Button
+            onClick={() => setIsAddingCard(true)}
+            className="mx-auto w-fit"
+          >{`Add Card`}</Button>
+        </Group>
+        {isAddingCard && (
+          <AddNewCard containerId={id} setIsAddingCard={setIsAddingCard} />
+        )}
+      </div>
+    </SortableContext>
+  );
+}
+
+const AddNewCard = ({ containerId, setIsAddingCard }) => {
   const { handleAddItem } = useCards();
+  const textareaRef = useFocusTrap();
   const { colorScheme } = useMantineColorScheme();
 
   const handleAddItemSubmit = (e) => {
@@ -44,90 +98,153 @@ export function Container({ id, items, color, disableTitle }) {
         description: text.value,
       },
     };
-    handleAddItem(id, item);
+    handleAddItem(containerId, item);
     setIsAddingCard(false);
   };
 
+  const handleCtrlAndEnter = (e) => {
+    if (e.key === "Enter" && e.ctrlKey) {
+      const item = {
+        id: nanoid(),
+        payload: {
+          description: e.target.value,
+        },
+      };
+      handleAddItem(containerId, item);
+      setIsAddingCard(false);
+    }
+  };
+
   return (
-    <SortableContext
-      id={id}
-      items={items}
-      strategy={verticalListSortingStrategy}
+    <form
+      onSubmit={handleAddItemSubmit}
+      className={clsx(
+        "p-4 mt-4 rounded-lg shadow-lg bg-neutral-100",
+        colorScheme === "dark" ? "bg-neutral-900" : "bg-neutral-100"
+      )}
     >
-      {!disableTitle && (
-        <Text className="mt-4" as="h4">
-          {`${TYPE[id].emoji} ${id}`}
+      <Group direction="column">
+        <Text className="items-center text-xs">
+          {`Press `}
+          <Kbd>Ctrl</Kbd>
+          {` + `}
+          <Kbd>Enter</Kbd>
+          {` to enter text`}
         </Text>
-      )}
-      <div className={`py-2 mt-8 ${color}`} ref={setNodeRef}>
-        {items?.length === 0 ? (
-          <Text disableColorScheme className="ml-4 blue-100 text-neutral-900">
-            {`No cards 😦, please add one!`}
-          </Text>
-        ) : (
-          <>
-            {items?.map((item) => (
-              <SortableItem
-                key={item?.id}
-                id={item?.id}
-                type={id}
-                payload={item?.payload}
-              />
-            ))}
-          </>
-        )}
-      </div>
-      <Group position="center" className="pt-4">
-        <Button
-          onClick={() => setIsAddingCard(true)}
-          className="mx-auto w-fit"
-        >{`Add Card`}</Button>
+        <Textarea
+          name="text"
+          ref={textareaRef}
+          className="w-full"
+          placeholder="Type here"
+          onKeyDown={handleCtrlAndEnter}
+        />
+        <Group position="apart" grow className="w-full">
+          <Button onClick={() => setIsAddingCard(false)} color="red">
+            {`Cancel`}
+          </Button>
+          <Button type="submit" color="dark">
+            {`Add`}
+          </Button>
+        </Group>
       </Group>
-      {isAddingCard && (
-        <form
-          onSubmit={handleAddItemSubmit}
-          className={clsx(
-            "p-4 mt-4 rounded-lg shadow-lg bg-neutral-100",
-						 colorScheme === "dark" ? "bg-neutral-900" : "bg-neutral-100"
-          )}
-        >
-          <Group direction="column">
-            <Text className="text-xs text-neutral-400">
-              {`Press `}
-              <Kbd>Ctrl</Kbd>
-              {`+`}
-              <Kbd>Enter</Kbd>
-              {` to enter text`}
-            </Text>
-            <Textarea
-              name="text"
-              ref={textareaRef}
-              className="w-full"
-              placeholder="Type here"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && e.ctrlKey) {
-                  const item = {
-                    id: nanoid(),
-                    payload: {
-                      description: e.target.value,
-                    },
-                  };
-                  handleAddItem(id, item);
-                  setIsAddingCard(false);
-                }
-              }}
-            />
-            <Group position="apart" grow className="w-full">
-              <Button onClick={() => setIsAddingCard(false)} color="red">
-                {`Cancel`}
-              </Button>
-              <Button type="submit" color="dark">
-                {`Add`}
-              </Button>
-            </Group>
-          </Group>
-        </form>
-      )}
-    </SortableContext>
+    </form>
   );
-}
+};
+const Header = ({ metadata, handles }) => {
+  const { colorScheme } = useMantineColorScheme();
+
+  return (
+    <Group position="apart" align="center">
+      <Text className="text-xl font-bold">{`${metadata?.label}`}</Text>
+
+      <Group>
+        <EditContainerPopover metadata={metadata} />
+        <ActionIcon {...handles} width={24} size="xl" color="dark">
+          <FiMove
+            className={
+              colorScheme === "dark" ? "text-neutral-200" : "text-neutral-900"
+            }
+            size={24}
+          />
+        </ActionIcon>
+      </Group>
+    </Group>
+  );
+};
+
+const EditContainerPopover = ({ metadata }) => {
+  const [openPopover, setOpenPopover] = useState(false);
+  const { handleEditContainerMetadata, handleRemoveContainer } = useCards();
+  const [colorChecked, setColorChecked] = useState("rose");
+
+  const handleLabelUpdate = (e) => {
+    const label = e.target.value;
+    handleEditContainerMetadata({
+      containerId: metadata.id,
+      metadata: { ...metadata, label },
+    });
+  };
+
+  const handleColorSelection = (color) => {
+    setColorChecked(color);
+    handleEditContainerMetadata({
+      containerId: metadata.id,
+      metadata: { ...metadata, color },
+    });
+  };
+
+  const handleDeleteContainer = ({ containerId }) => {
+    handleRemoveContainer({ containerId });
+    setOpenPopover(false);
+  };
+
+  return (
+    <Popover
+      open={openPopover}
+      setOpen={setOpenPopover}
+      placement="end"
+      position="bottom"
+    >
+      <Group direction="column" grow>
+        <TextInput defaultValue={metadata?.label} onBlur={handleLabelUpdate} />
+        <ColorPalette
+          colorChecked={colorChecked}
+          handleColorSelection={handleColorSelection}
+        />
+        <Button
+          onClick={() => handleDeleteContainer({ containerId: metadata.id })}
+          color="red"
+        >{`Delete container`}</Button>
+      </Group>
+    </Popover>
+  );
+};
+
+export const ColorPalette = ({
+  colorChecked,
+  setColorChecked,
+  handleColorSelection,
+}) => {
+  const onClick = (color) => {
+    Boolean(handleColorSelection)
+      ? handleColorSelection(color)
+      : setColorChecked(color);
+  };
+
+  return (
+    <Group spacing="xs">
+      {Object.keys(COLORS).map((color) => {
+        return (
+          <ColorSwatch
+            onClick={() => onClick(color)}
+            key={color}
+            color={COLORS[color].rgb}
+            className="cursor-pointer"
+          >
+            {colorChecked === color ? <FiCheck /> : null}
+          </ColorSwatch>
+        );
+      })}
+    </Group>
+  );
+};

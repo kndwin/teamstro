@@ -24,9 +24,14 @@ import { useCards } from "hooks";
 import { COLORS } from "styles/colors";
 
 export function Container({ id, items, metadata, disableHeader }) {
+	const { activeItem } = useCards()
   const [isAddingCard, setIsAddingCard] = useState(false);
   const { colorScheme } = useMantineColorScheme();
   const { setNodeRef, listeners, attributes } = useSortable({ id });
+
+	useEffect(() => {
+		console.log({ activeItem })
+	}, [activeItem])
 
   return (
     <SortableContext
@@ -36,9 +41,13 @@ export function Container({ id, items, metadata, disableHeader }) {
     >
       <div
         ref={setNodeRef}
+        style={{
+          border: colorScheme === "dark" ? "1px solid #ccc" : "1px solid #333",
+					opacity: activeItem?.id === id ? 0.5 : 1,
+        }}
         className={clsx(
           colorScheme === "dark" ? "bg-neutral-800" : "bg-neutral-100",
-          "p-4}"
+          "p-4 rounded-lg"
         )}
       >
         {!disableHeader && (

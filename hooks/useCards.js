@@ -29,7 +29,7 @@ const CARD_AND_CONTAINER_EVENT = ["add_container", "remove_container"];
 export const defaultItems = {
   Like: {
     metadata: {
-      id: "Like",
+      id: "Liked",
       color: "skyblue",
       label: "Like",
     },
@@ -37,7 +37,7 @@ export const defaultItems = {
   },
   Love: {
     metadata: {
-      id: "Love",
+      id: "Loved",
       color: "rose",
       label: "Love",
     },
@@ -61,13 +61,14 @@ const useStore = create((set) => ({
     });
   },
   activeItem: null,
+  setActiveItem: (activeItem) =>
+    set((state) => ({ ...state, activeItem: activeItem })),
   containers: Object.keys(defaultItems),
   setContainers: function (fn) {
     set(function (state) {
       return { ...state, containers: fn(state.containers) };
     });
   },
-  setActiveItem: (activeItem) => set((state) => ({ ...state, activeItem })),
   event: null,
   setEvent: (event) => set((state) => ({ ...state, event })),
 }));
@@ -174,14 +175,21 @@ export function useCards() {
   };
 
   const handleDragEnd = (event) => {
-    const { active, over } = event;
+    const { active, over, container } = event;
     const activeContainer = findContainer(active?.id);
     const overContainer = findContainer(over?.id);
+
     if (
       !activeContainer ||
       !overContainer ||
       activeContainer !== overContainer
     ) {
+      setActiveItem(null);
+      setEvent({
+        state: "ready",
+        name: "move_container",
+        data: { containers },
+      });
       return;
     }
 
@@ -247,11 +255,13 @@ export function useCards() {
       const areContainerDifferent = !isEqual(containers, newContainers);
 
       if (areContainerDifferent) {
+        /*
         setEvent({
           state: "ready",
           name: "move_container",
           data: { containers: newContainers },
         });
+					* */
         setContainers((prevContainers) => newContainers);
       }
       return;

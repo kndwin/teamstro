@@ -18,9 +18,18 @@ import { SortableItem } from "./SortableItem";
 import { nanoid } from "nanoid";
 
 export function Cards() {
+  const { colorScheme } = useMantineColorScheme();
   const router = useRouter();
   const { id: roomId } = router.query;
-  const { subscribe, publish, status, history, presence } = usePubSub();
+  const {
+    subscribe,
+    publish,
+    status,
+    history,
+    usersInChannel,
+    setUsersInChannel,
+    presence,
+  } = usePubSub();
   const { sm } = useBreakpoint();
 
   const {
@@ -51,8 +60,9 @@ export function Cards() {
     });
   };
 
+  // TODO: implement leader / follower and grab from leader instead
   const updateLatestState = (events) => {
-		console.log({ events })
+    console.log({ events });
     const lastCardAndContainerEvent = events.find(({ name }) =>
       CARD_AND_CONTAINER_EVENT.includes(name)
     );
@@ -70,12 +80,6 @@ export function Cards() {
     const lastCardEventIndex = events.findIndex(({ name }) =>
       CARD_EVENT.includes(name)
     );
-
-    console.log({
-      lastCardAndContainerEvent,
-      lastContainerEvent,
-      lastCardEvent,
-    });
 
     if (
       lastCardAndContainerEvent &&
@@ -104,11 +108,8 @@ export function Cards() {
   useEffect(() => {
     if (status === STATUS.CONNECTED) {
       roomEventSubscription();
-      presence(`room:${roomId}`, (err, presencePage) => {
-        console.log({ presencePage });
-      });
       history(`room:${roomId}`, (err, messagePage) => {
-				console.log({ messagePage })
+        console.log({ messagePage });
         updateLatestState(messagePage.items);
       });
     }

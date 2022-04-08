@@ -26,6 +26,9 @@ const useStore = create((set) => ({
   channelsSubscribed: [],
   setChannelsSubscribed: (channels) =>
     set((state) => ({ ...state, channelsSubscribed: channels })),
+  usersInChannel: [],
+  setUsersInChannel: (usersInChannel) =>
+    set((state) => ({ ...state, usersInChannel })),
 }));
 
 export function usePubSub() {

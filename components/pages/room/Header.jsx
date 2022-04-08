@@ -1,3 +1,4 @@
+import { useState } from "react";
 import clsx from "clsx";
 import { STATUS } from "hooks/usePubSub";
 import { useRouter } from "next/router";
@@ -25,80 +26,15 @@ import { Button } from "components";
 
 export const Header = ({ roomId }) => {
   const router = useRouter();
-  const { status } = usePubSub();
-  const clipboard = useClipboard({ timeout: 500 });
-  const { colorScheme } = useMantineColorScheme();
   const { sm } = useBreakpoint();
-
-  const statusObj = {
-    [STATUS.CONNECTED]: {
-      icon: <BsCheckSquareFill />,
-      color: COLORS.green.rgb,
-      text: "Connected",
-    },
-    [STATUS.CONNECTING]: {
-      icon: BsXLg,
-      color: COLORS.yellow.rgb,
-      text: "Not ready",
-    },
-    [STATUS.DISCONNECTED]: {
-      icon: <BsXLg />,
-      color: COLORS.rose.rgb,
-      text: "Disconnected",
-    },
-  };
 
   return (
     <Group position="apart" my="lg" align="baseline" px="lg">
       {sm ? (
         <>
           <Group>
-            <Tooltip
-              opened={status === STATUS.CONNECTING}
-              position="bottom"
-              placement="end"
-              withArrow
-              gutter={15}
-              width={170}
-              wrapLines
-              label={
-                status === STATUS.CONNECTING &&
-                `If "Not ready" for too long, please refresh the browser`
-              }
-            >
-              <Paper
-                style={{ backgroundColor: statusObj[status].color }}
-                className={clsx("text-neutral-900")}
-                shadow="xs"
-                p="xs"
-                withBorder
-              >
-                <Group>
-                  <Text size="lg" weight="bold">
-                    {statusObj[status].text}
-                  </Text>
-                </Group>
-              </Paper>
-            </Tooltip>
-            <Tooltip label="Click to copy URL" position="right">
-              <Paper
-                onClick={() => clipboard.copy(window.location.href)}
-                shadow="xs"
-                p="xs"
-                withBorder
-                className={clsx(
-                  colorScheme === "dark"
-                    ? "text-neutral-100"
-                    : "text-neutral-900",
-                  "cursor-pointer"
-                )}
-              >
-                <Text size="lg">
-                  <span className="font-bold">{`Room ID: `}</span>
-                  {roomId}
-                </Text>
-              </Paper>
-            </Tooltip>
+            <Connection size="full" />
+            <RoomId roomId={roomId} />
           </Group>
           <Group>
             <DarkModeSwitch />
@@ -111,26 +47,7 @@ export const Header = ({ roomId }) => {
         </>
       ) : (
         <>
-          <Paper
-            style={{ backgroundColor: statusObj[status].color }}
-            className={clsx("text-neutral-900")}
-            shadow="xs"
-            p="xs"
-            withBorder
-          >
-            {statusObj[status].icon}
-          </Paper>
-          <Tooltip label="Click to copy URL" position="right">
-            <Paper
-              onClick={() => clipboard.copy(window.location.href)}
-              shadow="xs"
-              withBorder
-              className="cursor-pointer"
-              p="xs"
-            >
-              <Text size="sm">{roomId}</Text>
-            </Paper>
-          </Tooltip>
+          <Connection size="sm" />
           <Button
             onClick={() => router.push("/")}
             leftIcon={<BsArrowLeft />}
@@ -181,5 +98,101 @@ const DarkModeSwitch = () => {
         }
       />
     </Group>
+  );
+};
+
+const RoomId = ({ roomId }) => {
+  const clipboard = useClipboard({ timeout: 500 });
+  const { colorScheme } = useMantineColorScheme();
+  const [clicked, setClicked] = useState(false);
+  const handleClick = () => {
+    setClicked(true);
+    setInterval(() => {
+      setClicked(false);
+    }, 1000);
+    clipboard.copy(window.location.href);
+  };
+
+  return (
+    <Tooltip opened={clicked} label="Copied" position="right">
+      <Group>
+        <Button onClick={() => handleClick()}>
+          <Text>{roomId}</Text>
+        </Button>
+        {!clicked && (
+          <Text
+            className={
+              colorScheme === "dark" ? "text-neutral-200" : "text-neutral-900"
+            }
+          >{`Click to copy URL`}</Text>
+        )}
+      </Group>
+    </Tooltip>
+  );
+};
+
+const Connection = ({ size = "full" }) => {
+  const { status } = usePubSub();
+  const statusObj = {
+    [STATUS.CONNECTED]: {
+      icon: <BsCheckSquareFill />,
+      color: COLORS.green.rgb,
+      text: "Connected",
+    },
+    [STATUS.CONNECTING]: {
+      icon: BsXLg,
+      color: COLORS.yellow.rgb,
+      text: "Not ready",
+    },
+    [STATUS.DISCONNECTED]: {
+      icon: <BsXLg />,
+      color: COLORS.rose.rgb,
+      text: "Disconnected",
+    },
+  };
+
+  return (
+    <>
+      {size === "full" && (
+        <Tooltip
+          opened={status === STATUS.CONNECTING}
+          position="bottom"
+          placement="end"
+          withArrow
+          gutter={15}
+          width={170}
+          wrapLines
+          label={
+            status === STATUS.CONNECTING &&
+            `If "Not ready" for too long, please refresh the browser`
+          }
+        >
+          <Paper
+            style={{ backgroundColor: statusObj[status].color }}
+            className={clsx("text-neutral-900")}
+            shadow="xs"
+            p="xs"
+            withBorder
+          >
+            <Group>
+              <Text size="md" weight="bold">
+                {statusObj[status].text}
+              </Text>
+            </Group>
+          </Paper>
+        </Tooltip>
+      )}
+      {size === "sm" && (
+        <Paper
+          style={{ backgroundColor: statusObj[status].color }}
+          className={clsx("text-neutral-900")}
+          shadow="xs"
+          p="xs"
+          withBorder
+        >
+          {statusObj[status].icon}
+        </Paper>
+      )}
+    </>
   );
 };

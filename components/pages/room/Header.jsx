@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import clsx from "clsx";
 import { STATUS } from "hooks/usePubSub";
 import { useRouter } from "next/router";
@@ -8,6 +8,7 @@ import {
   Switch,
   Tooltip,
   Paper,
+  Badge,
   useMantineColorScheme,
 } from "@mantine/core";
 import {
@@ -33,26 +34,17 @@ export const Header = ({ roomId }) => {
       {sm ? (
         <>
           <Group>
-            <Connection size="full" />
+            <Connection />
             <RoomId roomId={roomId} />
           </Group>
           <Group>
             <DarkModeSwitch />
-            <Button
-              onClick={() => router.push("/")}
-              leftIcon={<BsArrowLeft />}
-              className="w-fit"
-            >{`Back`}</Button>
           </Group>
         </>
       ) : (
         <>
-          <Connection size="sm" />
-          <Button
-            onClick={() => router.push("/")}
-            leftIcon={<BsArrowLeft />}
-            className="w-fit"
-          >{`Back`}</Button>
+          <Connection />
+          <DarkModeSwitch />
         </>
       )}
     </Group>
@@ -131,68 +123,73 @@ const RoomId = ({ roomId }) => {
   );
 };
 
-const Connection = ({ size = "full" }) => {
+const Connection = () => {
+  const { colorScheme } = useMantineColorScheme();
+  const [tooltip, setTooltip] = useState(false);
   const { status } = usePubSub();
+  useEffect(() => {
+    setTimeout(() => {
+      if (status === STATUS.CONNECTING) {
+        setTooltip(true);
+      }
+    }, 5_000);
+  }, []);
+  useEffect(() => {
+    if (tooltip) {
+      setTimeout(() => {
+        setTooltip(false);
+      }, 10_000);
+    }
+  }, [tooltip]);
   const statusObj = {
     [STATUS.CONNECTED]: {
       icon: <BsCheckSquareFill />,
       color: COLORS.green.rgb,
+      mantineColor: "green",
       text: "Connected",
     },
     [STATUS.CONNECTING]: {
       icon: BsXLg,
       color: COLORS.yellow.rgb,
+      mantineColor: "yellow",
       text: "Not ready",
     },
     [STATUS.DISCONNECTED]: {
       icon: <BsXLg />,
       color: COLORS.rose.rgb,
+      mantineColor: "red",
       text: "Disconnected",
     },
   };
 
   return (
-    <>
-      {size === "full" && (
-        <Tooltip
-          opened={status === STATUS.CONNECTING}
-          position="bottom"
-          placement="end"
-          withArrow
-          gutter={15}
-          width={170}
-          wrapLines
-          label={
-            status === STATUS.CONNECTING &&
-            `If "Not ready" for too long, please refresh the browser`
+    <Tooltip
+      opened={tooltip}
+      position="bottom"
+      placement="end"
+      withArrow
+      gutter={15}
+      width={170}
+      wrapLines
+      label={
+        status === STATUS.CONNECTING &&
+        `If "Not ready" for too long, please refresh the browser`
+      }
+    >
+      <Badge
+        className={clsx("text-neutral-900")}
+        size="xl"
+        variant="dot"
+        color={statusObj[status].mantineColor}
+      >
+        <Text
+          className={
+            colorScheme === "dark" ? "text-neutral-200" : "text-neutral-900"
           }
         >
-          <Paper
-            style={{ backgroundColor: statusObj[status].color }}
-            className={clsx("text-neutral-900")}
-            shadow="xs"
-            p="xs"
-            withBorder
-          >
-            <Group>
-              <Text size="md" weight="bold">
-                {statusObj[status].text}
-              </Text>
-            </Group>
-          </Paper>
-        </Tooltip>
-      )}
-      {size === "sm" && (
-        <Paper
-          style={{ backgroundColor: statusObj[status].color }}
-          className={clsx("text-neutral-900")}
-          shadow="xs"
-          p="xs"
-          withBorder
-        >
-          {statusObj[status].icon}
-        </Paper>
-      )}
-    </>
+          {statusObj[status].text}
+        </Text>
+      </Badge>
+    </Tooltip>
   );
 };

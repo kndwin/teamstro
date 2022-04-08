@@ -27,7 +27,7 @@ const CONTAINER_EVENT = ["move_container"];
 const CARD_AND_CONTAINER_EVENT = ["add_container", "remove_container"];
 
 export const defaultItems = {
-  Like: {
+  Liked: {
     metadata: {
       id: "Liked",
       color: "skyblue",
@@ -35,7 +35,7 @@ export const defaultItems = {
     },
     data: [],
   },
-  Love: {
+  Loved: {
     metadata: {
       id: "Loved",
       color: "rose",
@@ -379,21 +379,26 @@ export function useCards() {
   };
 
   const handleEditContainerMetadata = ({ containerId, metadata }) => {
-    const newItems = {
-      ...items,
-      [containerId]: {
-        metadata: { ...metadata },
-        data: items[containerId].data,
-      },
-    };
-    const areItemsDifferent = !isEqual(items, newItems);
-    if (areItemsDifferent) {
-      setEvent({
-        state: "ready",
-        name: "edit_container_metadata",
-        data: { items: newItems },
-      });
-      setItems((prevItems) => newItems);
+    if (containers.includes(containerId)) {
+      const newItems = {
+        ...items,
+        [containerId]: {
+          metadata: { ...metadata },
+          data: items[containerId].data,
+        },
+      };
+      const areItemsDifferent = !isEqual(items, newItems);
+      if (areItemsDifferent) {
+        setEvent({
+          state: "ready",
+          name: "edit_container_metadata",
+          data: { items: newItems },
+        });
+        setItems((prevItems) => newItems);
+      }
+    } else {
+      console.log("containerId not found in containers");
+      console.log({ containerId, containers, metadata, items });
     }
   };
 

@@ -188,8 +188,9 @@ const EditContainerPopover = ({ metadata }) => {
 
   const handleLabelUpdate = (e) => {
     const label = e.target.value;
+		console.log({ label, metadata })
     handleEditContainerMetadata({
-      containerId: metadata.id,
+      containerId: metadata?.id,
       metadata: { ...metadata, label },
     });
   };

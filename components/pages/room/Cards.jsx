@@ -10,7 +10,7 @@ import {
 } from "@mantine/core";
 
 import { COLORS } from "styles/colors";
-import { STATUS } from "hooks/usePubSub.js";
+import { STATUS, clientId } from "hooks/usePubSub.js";
 import { useBreakpoint, useCards, usePubSub } from "hooks";
 import { Button, Popover, Text } from "components";
 import { Container, ColorPalette } from "./Container";
@@ -25,93 +25,91 @@ export function Cards() {
     subscribe,
     publish,
     status,
-    history,
-    usersInChannel,
     setUsersInChannel,
-    presence,
+    presenceSubscribe,
+		presenceUpdate, 
+		usersInChannel
   } = usePubSub();
   const { sm } = useBreakpoint();
 
   const {
+    items,
+    containers,
     sensors,
     handleDragEnd,
     handleDragStart,
     handleDragOver,
     handleSubscriptionUpdate,
-    items,
     activeItem,
     collisionDetectionStrategy,
     event,
     setEvent,
-    containers,
   } = useCards();
+
+  const channelName = `room:${roomId}`;
 
   useEffect(() => {
     if (event?.state === "ready" && Boolean(roomId)) {
-      console.log({ event });
-      publish(`room:${roomId}`, event);
+      if (event.name === "new_user_joined") {
+        event?.data = { items, containers };
+      }
+      publish(channelName, event);
       setEvent({ state: "idle" });
     }
-  }, [event?.state, roomId]);
+  }, [event?.state, roomId, containers, items]);
 
   const roomEventSubscription = () => {
-    subscribe(`room:${roomId}`, (event) => {
+    subscribe(channelName, (event) => {
       handleSubscriptionUpdate({ type: event.name, payload: event.data });
     });
   };
 
-  // TODO: implement leader / follower and grab from leader instead
-  const updateLatestState = (events) => {
-    console.log({ events });
-    const lastCardAndContainerEvent = events.find(({ name }) =>
-      CARD_AND_CONTAINER_EVENT.includes(name)
-    );
+  const presenceSubscriptions = () => {
+    presenceSubscribe(channelName, "enter", (presence) => {
+      const newUser = {
+        clientId: presence.clientId,
+        isLeader: false,
+      };
 
-    const lastCardAndContainerEventIndex = events.findIndex(({ name }) =>
-      CARD_AND_CONTAINER_EVENT.includes(name)
-    );
-
-    const lastContainerEvent = events.find(({ name }) =>
-      CONTAINER_EVENT.includes(name)
-    );
-
-    const lastCardEvent = events.find(({ name }) => CARD_EVENT.includes(name));
-
-    const lastCardEventIndex = events.findIndex(({ name }) =>
-      CARD_EVENT.includes(name)
-    );
-
-    if (
-      lastCardAndContainerEvent &&
-      lastCardAndContainerEventIndex < lastCardEventIndex
-    ) {
-      handleSubscriptionUpdate({
-        type: lastContainerEvent.name,
-        payload: lastContainerEvent.data,
+      setUsersInChannel((prevUsers) => {
+        const doesNewUserExist = prevUsers.find(
+          (user) => user.clientId === newUser.clientId
+        );
+				const isUserLeader = prevUsers.find((user) => 
+					user.clientId === clientId && user.isLeader === true)
+        if (Boolean(isUserLeader)) {
+          setEvent({
+            state: "ready",
+            name: "new_user_joined",
+          });
+        }
+        return Boolean(doesNewUserExist) ? prevUsers : [...prevUsers, newUser];
       });
-    } else {
-      if (lastContainerEvent) {
-        handleSubscriptionUpdate({
-          type: lastContainerEvent.name,
-          payload: lastContainerEvent.data,
-        });
-      }
-      if (lastCardEvent) {
-        handleSubscriptionUpdate({
-          type: lastCardEvent.name,
-          payload: lastCardEvent.data,
-        });
-      }
-    }
+    });
+    presenceSubscribe(channelName, "leave", (presence) => {
+			setUsersInChannel((prevUsers) => {
+				const newUsers = prevUsers.filter(
+					(user) => user.clientId !== presence.clientId
+				);
+				if (presence.data.isLeader) {
+					newUsers.sort((a,b) => a.clientId - b.clientId);
+					newUsers[0].isLeader = true;
+					if (newUsers[0].clientId === clientId) {
+						presenceUpdate(channelName, {
+							clientId,
+							isLeader: true,
+						});
+					}
+				} 
+				return newUsers;
+			});
+    });
   };
 
   useEffect(() => {
     if (status === STATUS.CONNECTED) {
       roomEventSubscription();
-      history(`room:${roomId}`, (err, messagePage) => {
-        console.log({ messagePage });
-        updateLatestState(messagePage.items);
-      });
+      presenceSubscriptions();
     }
   }, [status]);
 

@@ -2,9 +2,11 @@ import create from "zustand";
 import * as Ably from "ably";
 import { nanoid } from "nanoid";
 
+export const clientId = nanoid()
+
 export const client = new Ably.Realtime({
   key: process.env.NEXT_PUBLIC_ABLY_API_KEY,
-  clientId: nanoid(),
+  clientId,
 });
 
 export const STATUS = {
@@ -18,17 +20,18 @@ export const TYPE = {
   FOLLOWER: "follower",
 };
 
-const useStore = create((set) => ({
-  type: null,
-  setType: (type) => set((state) => ({ ...state, type })),
+export const useStore = create((set) => ({
   status: STATUS.DISCONNECTED,
   setStatus: (status) => set((state) => ({ ...state, status })),
   channelsSubscribed: [],
   setChannelsSubscribed: (channels) =>
     set((state) => ({ ...state, channelsSubscribed: channels })),
   usersInChannel: [],
-  setUsersInChannel: (usersInChannel) =>
-    set((state) => ({ ...state, usersInChannel })),
+  setUsersInChannel: function (fn) {
+    set(function (state) {
+      return { ...state, usersInChannel: fn(state.usersInChannel) };
+    });
+  },
 }));
 
 export function usePubSub() {
@@ -37,8 +40,8 @@ export function usePubSub() {
     setStatus,
     channelsSubscribed,
     setChannelsSubscribed,
-    type,
-    setType,
+    usersInChannel,
+    setUsersInChannel,
   } = useStore();
 
   const publish = (channelName, message) => {
@@ -54,9 +57,16 @@ export function usePubSub() {
       const isLeaderElected = Boolean(
         presences?.find(({ data: { isLeader } }) => isLeader == true)
       );
-      channel.presence.enter(client.clientId);
+      channel.presence.enter(client.options.clientId);
       channel.presence.update({ isLeader: !isLeaderElected });
-      setType(isLeaderElected ? TYPE.FOLLOWER : TYPE.FOLLOWER);
+      const usersToSet = [
+        ...presences?.map(({ clientId, data }) => ({
+          clientId,
+          isLeader: data.isLeader,
+        })),
+        { clientId: client.options.clientId, isLeader: !isLeaderElected },
+      ];
+      setUsersInChannel((prevUsers) => usersToSet);
     });
     channel.subscribe(callback);
   };
@@ -82,6 +92,16 @@ export function usePubSub() {
     return channel.presence.get(callback);
   };
 
+  const presenceSubscribe = (channelName, action, callback) => {
+    const channel = client.channels.get(channelName);
+    channel.presence.subscribe(action, callback);
+  };
+
+	const presenceUpdate = (channelName, data) => {
+		const channel = client.channels.get(channelName);
+		channel.presence.update(data);
+	 };
+
   return {
     publish,
     subscribe,
@@ -90,6 +110,9 @@ export function usePubSub() {
     disconnect,
     history,
     presence,
-    type,
+    presenceSubscribe,
+		presenceUpdate,
+    usersInChannel,
+    setUsersInChannel,
   };
 }

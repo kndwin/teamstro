@@ -29,10 +29,6 @@ export function Container({ id, items, metadata, disableHeader }) {
   const { colorScheme } = useMantineColorScheme();
   const { setNodeRef, listeners, attributes } = useSortable({ id });
 
-	useEffect(() => {
-		console.log({ activeItem })
-	}, [activeItem])
-
   return (
     <SortableContext
       id={id}

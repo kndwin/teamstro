@@ -24,7 +24,7 @@ const CARD_EVENTS = [
   "add_item",
 ];
 const CONTAINER_EVENT = ["move_container"];
-const CARD_AND_CONTAINER_EVENT = ["add_container", "remove_container"];
+const CARD_AND_CONTAINER_EVENT = ["add_container", "remove_container", "new_user_joined"];
 
 export const defaultItems = {
   Liked: {
@@ -53,7 +53,7 @@ export const defaultItems = {
   },
 };
 
-const useStore = create((set) => ({
+export const useStore = create((set) => ({
   items: defaultItems,
   setItems: function (fn) {
     set(function (state) {

@@ -24,7 +24,6 @@ import { useClipboard } from "@mantine/hooks";
 
 import { COLORS } from "styles/colors";
 import { usePubSub } from "hooks";
-import { client } from "hooks/usePubSub";
 import { Button, Popover } from "components";
 
 const HeaderContext = createContext();
@@ -104,7 +103,6 @@ const Avatars = () => {
   const { usersInChannel } = usePubSub();
   return (
     <Group>
-      <Text>{client?.options?.clientId}</Text>
       <AvatarsGroup limit={1} total={usersInChannel?.length}>
         {usersInChannel?.length === 0 ? (
           <Avatar key={0} size="sm" radius="xl" />

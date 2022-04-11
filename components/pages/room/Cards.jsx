@@ -51,7 +51,7 @@ export function Cards() {
   useEffect(() => {
     if (event?.state === "ready" && Boolean(roomId)) {
       if (event.name === "new_user_joined") {
-        event?.data = { items, containers };
+        event.data = { items, containers };
       }
       publish(channelName, event);
       setEvent({ state: "idle" });

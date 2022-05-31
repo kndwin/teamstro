@@ -21,7 +21,10 @@ function MyApp({ Component, pageProps }) {
       colorScheme={colorScheme}
       toggleColorScheme={toggleColorScheme}
     >
-      <MantineProvider theme={{ colorScheme }}>
+      <MantineProvider 
+				withGlobalStyles
+				withNormalizeCSS
+				theme={{ colorScheme }}>
         <NextIntlProvider messages={pageProps.messages}>
           <Component {...pageProps} />
         </NextIntlProvider>

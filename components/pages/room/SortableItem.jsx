@@ -97,7 +97,7 @@ export function SortableItem({ id, type, payload, metadata }) {
     <div
       ref={setNodeRef}
       className={clsx(
-        "p-4 mx-4 my-4 rounded-lg shadow-lg bg-neutral-100",
+        "p-4 mx-4 my-4 rounded-lg shadow-lg",
         colorScheme === "dark" ? "bg-neutral-900" : "bg-neutral-100"
       )}
       style={style}

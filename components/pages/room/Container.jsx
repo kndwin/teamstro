@@ -24,7 +24,7 @@ import { useCards } from "hooks";
 import { COLORS } from "styles/colors";
 
 export function Container({ id, items, metadata, disableHeader }) {
-	const { activeItem } = useCards()
+  const { activeItem } = useCards();
   const [isAddingCard, setIsAddingCard] = useState(false);
   const { colorScheme } = useMantineColorScheme();
   const { setNodeRef, listeners, attributes } = useSortable({ id });
@@ -39,7 +39,7 @@ export function Container({ id, items, metadata, disableHeader }) {
         ref={setNodeRef}
         style={{
           border: colorScheme === "dark" ? "1px solid #ccc" : "1px solid #333",
-					opacity: activeItem?.id === id ? 0.5 : 1,
+          opacity: activeItem?.id === id ? 0.5 : 1,
         }}
         className={clsx(
           colorScheme === "dark" ? "bg-neutral-800" : "bg-neutral-100",
@@ -124,7 +124,7 @@ const AddNewCard = ({ containerId, setIsAddingCard }) => {
     <form
       onSubmit={handleAddItemSubmit}
       className={clsx(
-        "p-4 mt-4 rounded-lg shadow-lg bg-neutral-100",
+        "p-4 mt-4 rounded-lg shadow-lg",
         colorScheme === "dark" ? "bg-neutral-900" : "bg-neutral-100"
       )}
     >
@@ -184,7 +184,7 @@ const EditContainerPopover = ({ metadata }) => {
 
   const handleLabelUpdate = (e) => {
     const label = e.target.value;
-		console.log({ label, metadata })
+    console.log({ label, metadata });
     handleEditContainerMetadata({
       containerId: metadata?.id,
       metadata: { ...metadata, label },

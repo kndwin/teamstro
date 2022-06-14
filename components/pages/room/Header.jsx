@@ -18,12 +18,12 @@ import {
   BsCheckSquareFill,
   BsXLg,
   BsThreeDots,
-  BsPeople,
+  BsClipboard,
 } from "react-icons/bs";
 import { useClipboard } from "@mantine/hooks";
 
 import { COLORS } from "styles/colors";
-import { usePubSub } from "hooks";
+import { useCards, usePubSub } from "hooks";
 import { Button, Popover } from "components";
 
 const HeaderContext = createContext();
@@ -191,14 +191,14 @@ const Connection = () => {
 
 const HeaderPopover = () => {
   return (
-    <Group>
-      <RoomId />
+    <Group direction="column">
+      <CopyRoomId />
+      <CopyTableToClipboard />
     </Group>
   );
 };
 
-const RoomId = () => {
-  const { roomId } = useContext(HeaderContext);
+const CopyRoomId = () => {
   const clipboard = useClipboard({ timeout: 500 });
   const { colorScheme } = useMantineColorScheme();
   const [clicked, setClicked] = useState(false);
@@ -212,21 +212,76 @@ const RoomId = () => {
 
   return (
     <Tooltip opened={clicked} label="Copied" position="right">
-      <Group direction="column">
-        <Text
-          className={
-            colorScheme === "dark" ? "text-neutral-200" : "text-neutral-900"
-          }
-        >{`Click to copy URL`}</Text>
-        <Button
-          className={
-            colorScheme === "dark" ? "bg-neutral-900" : "bg-neutral-800"
-          }
-          onClick={() => handleClick()}
-        >
-          <Text>{roomId}</Text>
-        </Button>
-      </Group>
+      <Button
+        leftIcon={<BsClipboard />}
+        className={colorScheme === "dark" ? "bg-neutral-900" : "bg-neutral-800"}
+        onClick={() => handleClick()}
+      >
+        {`Copy URL`}
+      </Button>
+    </Tooltip>
+  );
+};
+
+const CopyTableToClipboard = () => {
+  const { items } = useCards();
+  const table = `<table></table>`;
+  const headerValues = Object.entries(items).map(
+    ([key, value]) => value.metadata.label
+  );
+
+  const bodyValues = Object.entries(items).map(([key, value]) =>
+    value.data.map(({ payload }) => payload.description)
+  );
+  const max = Math.max(...bodyValues.map((row) => row.length));
+  const fillWithZero = bodyValues.map((row) =>
+    row.concat(Array(max - (row.length - 1)).fill(""))
+  );
+  const transpose = (m) => m[0].map((x, i) => m.map((x) => x[i]));
+  const transposedBody = transpose(fillWithZero).filter((row) =>
+    row.some(Boolean)
+  );
+
+  const htmlTable =
+    "<table>" +
+    "<thead><tr>" +
+    headerValues.map((header) => `<th align="left">${header}</th>`).join("") +
+    "</tr></thead>" +
+    "<tbody>" +
+    transposedBody
+      .map((row) => `<tr>${row.map((col) => `<th>${col}</th>`).join("")}</tr>`)
+      .join("") +
+    "</tbody>" +
+    "</table>";
+
+  console.log({
+    items,
+    max,
+    bodyValues,
+    transposedBody,
+    htmlTable,
+  });
+
+  const clipboard = useClipboard({ timeout: 500 });
+  const { colorScheme } = useMantineColorScheme();
+  const [clicked, setClicked] = useState(false);
+  const handleClick = () => {
+    setClicked(true);
+    setInterval(() => {
+      setClicked(false);
+    }, 1000);
+    clipboard.copy(htmlTable);
+  };
+
+  return (
+    <Tooltip opened={clicked} label="Copied" position="right">
+      <Button
+        onClick={() => handleClick()}
+        leftIcon={<BsClipboard />}
+        className={colorScheme === "dark" ? "bg-neutral-900" : "bg-neutral-800"}
+      >
+        {`Copy as table`}
+      </Button>
     </Tooltip>
   );
 };

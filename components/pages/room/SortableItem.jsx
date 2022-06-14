@@ -67,7 +67,12 @@ export function SortableItem({ id, type, payload, metadata }) {
   const EditMode = () => (
     <form onSubmit={handleEditSubmit}>
       <Group direction="column">
-        <Text className="text-xs text-neutral-400">
+        <Text
+          className={clsx(
+            "text-[14px]",
+            colorScheme === "dark" ? "text-neutral-100" : "text-neutral-900"
+          )}
+        >
           {`Press `}
           <Kbd>Ctrl</Kbd>
           {`+`}
@@ -78,6 +83,7 @@ export function SortableItem({ id, type, payload, metadata }) {
           ref={textareaRef}
           name="text"
           className="w-full"
+          autosize
           defaultValue={payload?.description}
           onKeyDown={handleCtrlAndEnter}
         />

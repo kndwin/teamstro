@@ -65,10 +65,6 @@ export function Cards() {
   };
 
 
-	useEffect(() => {
-		console.log({ usersInChannel })
-	}, [usersInChannel])
-
   const presenceSubscriptions = () => {
     presenceSubscribe(channelName, "enter", (presence) => {
       const newUser = {

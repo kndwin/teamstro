@@ -147,7 +147,7 @@ const AddNewCard = ({ containerId, setIsAddingCard }) => {
           <Button onClick={() => setIsAddingCard(false)} color="red">
             {`Cancel`}
           </Button>
-          <Button type="submit" color="dark">
+          <Button type="submit" variant="gradient" gradient={{ from: 'indigo', to: 'cyan' }}>
             {`Add`}
           </Button>
         </Group>
